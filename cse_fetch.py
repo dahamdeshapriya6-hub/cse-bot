@@ -84,5 +84,26 @@ def main():
         print(r)
 
 
+def probe():
+    """Test run: ask the feed for past prices of one share (id 204) so we can
+    see what it sends back. Result is saved in data/probe.json."""
+    out = {}
+    for p in (1, 2, 3, 4, 5):
+        try:
+            txt = json.dumps(call("companyChartDataByStock",
+                                  {"stockId": 204, "period": p}))
+            out[f"period_{p}"] = {"length": len(txt), "start": txt[:700],
+                                  "end": txt[-300:]}
+        except Exception as e:
+            out[f"period_{p}"] = {"error": str(e)}
+    with open(os.path.join(DATA, "probe.json"), "w", encoding="utf-8") as f:
+        json.dump(out, f, indent=1)
+    print("Probe saved to data/probe.json")
+
+
 if __name__ == "__main__":
     main()
+    try:
+        probe()
+    except Exception as e:
+        print("Probe skipped:", e)
