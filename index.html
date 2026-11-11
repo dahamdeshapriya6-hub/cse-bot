@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CSE Trend Dashboard</title>
+<style>
+:root{--bg:#f3f6f5;--panel:#fff;--ink:#15262b;--mute:#5d7076;--line:#d8e2e0;--up:#0b8a5b;--dn:#c43d3d;--flat:#a07a12;--acc:#1d5c75}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1b1f;--panel:#16272c;--ink:#e6eeee;--mute:#8da3a8;--line:#27393e;--up:#3ec98f;--dn:#f06a6a;--flat:#e0b84a;--acc:#6bb7d4}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Segoe UI",system-ui,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:18px 14px 40px}
+h1{font:600 26px Georgia,serif;margin:0}h2{font-size:16px;margin:0 0 8px}
+.sub{color:var(--mute);margin:2px 0 14px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.stat span{display:block;color:var(--mute);font-size:13px}.stat b{font-size:19px}
+.up{color:var(--up)}.dn{color:var(--dn)}.flat{color:var(--flat)}.mute{color:var(--mute)}
+.ctl{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+input,select{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit}
+.wrap{overflow-x:auto;max-height:520px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;min-width:620px}
+th,td{padding:8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{position:sticky;top:0;background:var(--panel);color:var(--mute);font-weight:500;font-size:13px}
+th:first-child,td:first-child{text-align:left}
+tbody tr{cursor:pointer}tbody tr:hover,tr.sel{background:color-mix(in srgb,var(--acc) 12%,transparent)}
+.b{padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;border:1px solid currentColor}
+svg{display:block;width:100%;height:auto}small{color:var(--mute)}
+</style></head><body><main>
+<h1>CSE Trend Dashboard</h1>
+<p class="sub" id="asof">Loading…</p>
+<div class="panel"><div class="grid" id="breadth"></div></div>
+<div class="panel">
+<div class="ctl"><input id="q" placeholder="Search share or company"><select id="f"><option value="">All trends</option><option>Rising</option><option>Declining</option><option>Sideways</option></select>
+<select id="s"><option value="symbol">Sort: name</option><option value="ret5">Sort: 5-day change</option><option value="ret20">Sort: 20-day change</option><option value="score">Sort: signal score</option></select>
+<label><input type="checkbox" id="lo" checked> hide rarely-traded shares</label></div>
+<div class="wrap"><table><thead><tr><th>Share</th><th>Last (LKR)</th><th>5-day</th><th>20-day</th><th>Trend</th><th>60 days</th></tr></thead><tbody id="rows"></tbody></table></div></div>
+<div class="panel" id="det" hidden></div>
+<div class="panel"><h2>How reliable are the signals?</h2><div id="bt"></div>
+<p><small>Forecasts are statistical ranges from past price movement, not predictions. They do not know about news, results or policy changes. This is not investment advice; consider a licensed broker before investing.</small></p></div>
+</main>
+<script>
+const $=id=>document.getElementById(id);let R,cur;
+const cls=t=>t=="Rising"?"up":t=="Declining"?"dn":"flat";
+const pc=v=>v==null?"–":`<span class="${v>=0?'up':'dn'}">${v>=0?"+":""}${v.toFixed(1)}%</span>`;
+const fm=v=>v.toLocaleString("en-US",{maximumFractionDigits:2});
+function spark(a,w,h,col){const lo=Math.min(...a),hi=Math.max(...a),X=i=>i*(w-2)/(a.length-1)+1,Y=v=>h-2-(v-lo)/(hi-lo||1)*(h-4);
+return`<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="width:${w}px"><path d="${a.map((v,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(v).toFixed(1)).join("")}" fill="none" stroke="${col}" stroke-width="1.6"/></svg>`}
+function list(){const q=$("q").value.toLowerCase(),f=$("f").value,s=$("s").value,lo=$("lo").checked;
+let a=R.shares.filter(x=>(!f||x.trend==f)&&(!lo||!x.lowActivity)&&(x.symbol+x.name).toLowerCase().includes(q));
+a.sort((x,y)=>s=="symbol"?x.symbol.localeCompare(y.symbol):(y[s]??-999)-(x[s]??-999));
+$("rows").innerHTML=a.map(x=>`<tr data-s="${x.symbol}" class="${x.symbol==cur?'sel':''}"><td><b>${x.symbol}</b><br><small>${x.name}</small></td><td>${fm(x.last)}</td><td>${pc(x.ret5)}</td><td>${pc(x.ret20)}</td><td><span class="b ${cls(x.trend)}">${x.trend}</span></td><td>${spark(x.spark,90,26,"var(--acc)")}</td></tr>`).join("")||'<tr><td colspan="6">No shares match.</td></tr>';
+document.querySelectorAll("#rows tr[data-s]").forEach(t=>t.onclick=()=>{cur=t.dataset.s;list();detail()})}
+function detail(){const x=R.shares.find(s=>s.symbol==cur);if(!x)return;const d=$("det");d.hidden=false;
+const fc=x.forecast,H=[["Next trading day","1"],["Next 7 days","7"],["Next month","21"],["Next year (scenario)","252"]];
+d.innerHTML=`<h2>${x.symbol} <span class="mute" style="font-weight:400">${x.name}</span> <span class="b ${cls(x.trend)}">${x.trend}</span></h2>
+${spark(x.spark,700,200,"var(--acc)")}<small>Last 60 trading days${x.splitAdjusted?" (adjusted for a share split)":""}</small>
+<div class="grid" style="margin:12px 0"><div class="stat"><span>Last close</span><b>${fm(x.last)}</b></div><div class="stat"><span>20-day average</span><b>${fm(x.sma20)}</b></div><div class="stat"><span>RSI (14)</span><b>${x.rsi}</b></div><div class="stat"><span>1-year range</span><b>${fm(x.lo52)}–${fm(x.hi52)}</b></div><div class="stat"><span>Avg daily turnover</span><b>${fm(x.turnover)}</b></div></div>
+<p><b>Why ${x.trend}:</b> ${x.why.length?x.why.join(", ")+".":"signals are mixed or the share is not trading."}${x.lowActivity?" <span class='flat'>Rarely traded: prices may jump and be hard to buy or sell.</span>":""}</p>
+${fc?`<div class="wrap"><table style="min-width:0"><thead><tr><th>Forecast</th><th>Likely range (80%)</th><th>Middle</th><th>Chance of rise</th></tr></thead><tbody>${H.map(([n,k])=>`<tr><td>${n}</td><td>${fm(fc[k][0])} – ${fm(fc[k][2])}</td><td>${fm(fc[k][1])}</td><td>${fc[k][3]}%</td></tr>`).join("")}</tbody></table></div>`:"<p class='mute'>No recent trades, so no forecast.</p>"}`;
+d.scrollIntoView({behavior:"smooth",block:"nearest"})}
+fetch("data/results.json").then(r=>r.json()).then(j=>{R=j;
+$("asof").textContent=`Prices as of ${j.asOf} · updated ${j.generated.replace("T"," ")} UTC · ${j.shares.length} shares`;
+const c={};j.shares.forEach(x=>c[x.trend]=(c[x.trend]||0)+1);
+$("breadth").innerHTML=[["Rising","up"],["Sideways","flat"],["Declining","dn"],["Inactive","mute"]].map(([k,s])=>`<div class="stat"><span>${k}</span><b class="${s}">${c[k]||0}</b></div>`).join("");
+const b=j.backtest;$("bt").innerHTML=b.All?`<p>Over the past year, across all shares, a share was higher 5 trading days later <b>${b.All.pctUp}%</b> of the time. After a <b class="up">Rising</b> signal it was higher <b>${b.Rising?b.Rising.pctUp:"–"}%</b> of the time; after <b class="dn">Declining</b>, <b>${b.Declining?b.Declining.pctUp:"–"}%</b>. If these numbers are close together, the signal adds little.</p>`:"";
+["q","f","s","lo"].forEach(i=>$(i).oninput=list);list()}).catch(()=>$("asof").textContent="Could not load data/results.json. Run the workflow first.");
+</script></body></html>
