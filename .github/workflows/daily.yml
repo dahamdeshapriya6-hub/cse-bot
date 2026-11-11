@@ -1,0 +1,26 @@
+name: Daily CSE prices
+
+on:
+  schedule:
+    - cron: "30 9 * * 1-5"   # 3:00pm Sri Lanka time, Mon-Fri
+  workflow_dispatch:          # lets you also run it by hand
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python cse_fetch.py
+      - name: Save results
+        run: |
+          git config user.name "cse-bot"
+          git config user.email "cse-bot@users.noreply.github.com"
+          git add data
+          git commit -m "Update prices" || echo "Nothing new"
+          git push
