@@ -23,6 +23,7 @@ jobs:
       - run: python cse_fetch.py
       - run: python cse_backfill.py
       - run: python analyze.py
+      - run: python news.py
       - run: python research.py
       - name: Save results
         run: |
