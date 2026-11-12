@@ -1,0 +1,32 @@
+{
+ "companyInfoSummery": {
+  "length": 1364,
+  "start": "{\"reqSymbolBetaInfo\": {\"securityId\": 642, \"triASIBetaValue\": 1.266456, \"betaValueSPSL\": 1.5773953, \"triASIBetaPeriod\": \"2026\", \"quarter\": 1}, \"reqTagsLogo\": null, \"reqLogo\": {\"id\": 2232, \"path\": \"upload_logo/642_1603172106.jpeg\", \"secId\": 642}, \"reqSymbolInfo\": {\"id\": 204, \"symbol\": \"ABAN.N0000\", \"name\": \"ABANS ELECTRICALS PLC\", \"issueDate\": \"01/JAN/1984\", \"quantityIssued\": 5110560, \"parValue\": 1.0, \"issuedPrice\": null, \"lastTradedPrice\": 1018.5, \"wtdHiPrice\": 1059.75, \"mtdHiPrice\": 1059.75, \"ytdHiPrice\": 1550.0, \"p12HiPrice\": 1550.0, \"allHiPrice\": 1625.0, \"allLowPrice\": 8.75, \"wtdLowPrice\": 9"
+ },
+ "smd/categories": {
+  "length": 1839,
+  "start": "[\"ANNUAL FINANCIAL REPORT\", \"ANNUAL GENERAL MEETING - APPROVED\", \"ANNUAL GENERAL MEETING - INITIAL\", \"APPOINTMENT OF CHAIRPERSON\", \"APPOINTMENT OF CHIEF EXECUTIVE OFFICER\", \"APPOINTMENT OF DIRECTORS\", \"CAPITALIZATION OF RESERVES\", \"CASH DIVIDEND\", \"CASH DIVIDEND (DATES TO BE NOTIFIED)\", \"CHANGE OF COMPANY ADDRESS\", \"CHANGE OF COMPANY NAME\", \"CHANGE OF COMPANY SECRETARY/REGISTRAR\", \"CIRCULAR TO SHAREHOLDERS\", \"CLARIFICATION TO A NEWSPAPER ARTICLE\", \"CORPORATE DISCLOSURE\", \"CSE CIRCULARS / SEC DIRECTIVES / DISCLOSURES\", \"DEALINGS BY DIRECTORS\", \"DEBENTURE ISSUE\", \"DEBENTURE ISSUE(BASIS OF ALLOTM"
+ },
+ "approvedAnnouncement": {
+  "length": 30912,
+  "start": "{\"approvedAnnouncements\": [{\"id\": 33468, \"createdDate\": 1794483572000, \"dateOfAnnouncement\": \"12 Nov 2026\", \"announcementId\": 39977, \"announcementCategory\": \"CORPORATE DISCLOSURE\", \"company\": \"SENKADAGALA FINANCE PLC\", \"type\": null, \"symbol\": null, \"recordDate\": null, \"allotment\": null, \"xr\": null, \"xc\": null, \"xd\": null, \"tradingCommencement\": null, \"tradingSuspended\": null, \"paymentDate\": null, \"agmDate\": null, \"dateOfAgmInitial\": null, \"logoUrl\": \"upload_logo/441_1601464990.jpeg\", \"remarks\": \"DEVIATION IN PUBLIC HOLDING PERCENTAGE\"}, {\"id\": 33467, \"createdDate\": 1794483287000, \"dateOfAnnoun"
+ },
+ "getFinancialAnnouncement": {
+  "length": 49190,
+  "start": "{\"reqFinancialAnnouncemnets\": [{\"id\": 53686, \"path\": \"cmt/upload_report_file/369_1794482282493.pdf\", \"manualDate\": 1790706600000, \"uploadedDate\": \"12 Nov 2026 04:48:02 PM\", \"fileText\": \"Interim Financial Statements for the Quarter ended 30th September 2026\", \"name\": \"COMMERCIAL BANK OF CEYLON PLC\", \"symbol\": \"COMB\", \"logoUrl\": \"upload_logo/328m7MwB2CexSgiJ_3Jan2024051241GMT_1704258761020.jpeg\", \"authorizedDate\": \"12 Nov 2026 05:16:41 PM\"}, {\"id\": 53685, \"path\": \"cmt/upload_report_file/3027_1794479814074.pdf\", \"manualDate\": 1790706600000, \"uploadedDate\": \"12 Nov 2026 04:06:54 PM\", \"fileText\": \""
+ },
+ "getNewAnnouncement": {
+  "error": "HTTP Error 400: "
+ },
+ "circularAnnouncement": {
+  "length": 1404,
+  "start": "{\"reqCircularAnnouncement\": [{\"id\": 14553, \"path\": \"upload_report_file/KcKqa0vJM6yv4jMJ_10Nov2026102425GMT_1794306265593.pdf\", \"manualDate\": 1794306090000, \"uploadedDate\": \"10 Nov 2026 03:54:25 PM\", \"fileText\": \"FALCON VALLEY HYDRO LIMITED (\\u201cCOMPANY\\u201d) \\u2013 LISTING VIA INTRODUCTION ON THE EMPOWER BOARD\"}, {\"id\": 14531, \"path\": \"upload_report_file/UWlDMal9aCRlVsHC_5Nov2026034812GMT_1793850492109.pdf\", \"manualDate\": 1793850330000, \"uploadedDate\": \"05 Nov 2026 09:18:12 AM\", \"fileText\": \"AMENDMENTS TO THE LISTING RULES OF THE COLOMBO STOCK EXCHANGE\"}, {\"id\": 14529, \"path\": \"upload_repor"
+ },
+ "financialAnnouncement": {
+  "error": "HTTP Error 400: "
+ },
+ "companyInfoVideo": {
+  "length": 301,
+  "start": "{\"reqCompanyArticleInfo\": [{\"id\": 1207851, \"heading\": \"Abans Electricals to invest Rs 3.5 bn in air conditioner refrigerator plants\", \"attachment\": \"https://cdn.cse.lk/pdf/company-articles/ABAN-N0000-AbansElectricalstoinvestRs3-5bninairconditioner-refrigeratorplants.pdf\"}], \"reqCompanyVideoInfo\": []}"
+ }
+}
