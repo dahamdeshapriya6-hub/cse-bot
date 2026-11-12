@@ -99,6 +99,18 @@ def accuracy(a):
             for h, s in st.items() if s[2] >= 30}
 
 
+def risk(a, low):
+    """Risk from past price swings and how easily the share trades."""
+    lr = [math.log(a[i] / a[i - 1]) for i in range(max(1, len(a) - 60), len(a)) if a[i - 1] > 0 and a[i] > 0]
+    m = sum(lr) / len(lr)
+    vol = 100 * math.sqrt(sum((x - m) ** 2 for x in lr) / max(1, len(lr) - 1))
+    w = [a[i + 20] / a[i] - 1 for i in range(len(a) - 20)]
+    worst = round(100 * min(w), 1) if w else None
+    p10 = round(100 * sum(x <= -.10 for x in w) / len(w)) if w else None
+    level = "High" if vol > 3 or low else "Low" if vol < 1.5 else "Medium"
+    return round(vol, 2), worst, p10, level
+
+
 def num(x):
     try: return float(x)
     except Exception: return 0.0
@@ -129,13 +141,15 @@ def main():
         ret = lambda n: round(100 * (a[-1] / a[-1 - n] - 1), 2) if len(a) > n else None
         last20 = [x for x in v if x[0] in recent]
         turn = sum(x[1] * x[2] for x in last20) / 20
+        low = turn < 500000 or len(last20) < 10
+        vol, worst, p10, level = risk(a, low)
         res.append({"symbol": sym, "name": names.get(sym, ""), "last": raw[-1], "date": v[-1][0],
                     **{f"ret{k}": ret(k) for k in (1, 5, 7, 14, 20, 30, 60)},
                     "sma5": round(sma(a, 5), 2), "sma20": round(sma(a, 20), 2),
                     "sma50": round(sma(a, 50), 2) if len(a) >= 50 else None, "rsi": round(rsi(a)),
                     "hi52": round(max(a), 2), "lo52": round(min(a), 2),
-                    "turnover": round(turn), "daysTraded": len(last20), "lowActivity": turn < 500000 or len(last20) < 10,
-                    "splitAdjusted": nsplit, "trend": label, "score": sc, "why": why,
+                    "turnover": round(turn), "daysTraded": len(last20), "lowActivity": low,
+                    "vol": vol, "worst20": worst, "pDrop10": p10, "risk": level, "splitAdjusted": nsplit, "trend": label, "score": sc, "why": why,
                     "forecast": forecast(a) if not inactive else None,
                     "acc": accuracy(a) if not inactive else {},
                     "spark": [round(x, 2) for x in a[-60:]], "sparkDates": [x[0] for x in v[-60:]]})
