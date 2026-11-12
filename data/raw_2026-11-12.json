@@ -3,14 +3,14 @@
   "id": 204,
   "symbol": "ABAN.N0000",
   "open": 1013.0,
-  "high": 1013.0,
+  "high": 1039.5,
   "low": 1013.0,
-  "lastTradedPrice": 1013.0,
-  "change": -5.5,
-  "changePercentage": -0.5400098,
-  "crossingVolume": 1,
-  "tradesTime": 1794457672112,
-  "quantity": 1
+  "lastTradedPrice": 1039.5,
+  "change": 21.0,
+  "changePercentage": 2.0618556,
+  "crossingVolume": 11,
+  "tradesTime": 1794462597313,
+  "quantity": 10
  },
  {
   "id": 1845,
@@ -34,9 +34,9 @@
   "lastTradedPrice": 84.7,
   "change": 0.6,
   "changePercentage": 0.71343637,
-  "crossingVolume": 50707,
-  "tradesTime": 1794461567552,
-  "quantity": 350
+  "crossingVolume": 53749,
+  "tradesTime": 1794462737186,
+  "quantity": 2000
  },
  {
   "id": 472,
@@ -47,22 +47,22 @@
   "lastTradedPrice": 102.0,
   "change": -0.5,
   "changePercentage": -0.4878049,
-  "crossingVolume": 84586,
-  "tradesTime": 1794461274789,
-  "quantity": 92
+  "crossingVolume": 97461,
+  "tradesTime": 1794462569761,
+  "quantity": 30
  },
  {
   "id": 406,
   "symbol": "APLA.N0000",
   "open": 159.0,
-  "high": 160.0,
+  "high": 162.75,
   "low": 157.5,
-  "lastTradedPrice": 160.0,
-  "change": 0.0,
-  "changePercentage": 0.0,
-  "crossingVolume": 4661,
-  "tradesTime": 1794461355003,
-  "quantity": 29
+  "lastTradedPrice": 162.75,
+  "change": 2.75,
+  "changePercentage": 1.71875,
+  "crossingVolume": 4662,
+  "tradesTime": 1794462386140,
+  "quantity": 1
  },
  {
   "id": 554,
@@ -73,9 +73,9 @@
   "lastTradedPrice": 4.9,
   "change": 0.0,
   "changePercentage": 0.0,
-  "crossingVolume": 180885,
-  "tradesTime": 1794460553534,
-  "quantity": 180
+  "crossingVolume": 195922,
+  "tradesTime": 1794462464875,
+  "quantity": 5000
  },
  {
   "id": 163,
@@ -96,12 +96,12 @@
   "open": 12.3,
   "high": 12.6,
   "low": 12.3,
-  "lastTradedPrice": 12.3,
-  "change": -0.1,
-  "changePercentage": -0.8064516,
-  "crossingVolume": 3233,
-  "tradesTime": 1794460831803,
-  "quantity": 76
+  "lastTradedPrice": 12.5,
+  "change": 0.1,
+  "changePercentage": 0.8064516,
+  "crossingVolume": 4234,
+  "tradesTime": 1794462792749,
+  "quantity": 1000
  },
  {
   "id": 2035,
@@ -121,12 +121,12 @@
   "symbol": "AHUN.N0000",
   "open": 87.5,
   "high": 87.5,
-  "low": 86.1,
-  "lastTradedPrice": 86.1,
-  "change": -0.8,
-  "changePercentage": -0.9205984,
-  "crossingVolume": 320,
-  "tradesTime": 1794461492754,
-  "quantity": 1
+  "low": 86.0,
+  "lastTradedPrice": 86.0,
+  "change": -0.9,
+  "changePercentage": -1.0356731,
+  "crossingVolume": 1525,
+  "tradesTime": 1794461904303,
+  "quantity": 322
  }
 ]
