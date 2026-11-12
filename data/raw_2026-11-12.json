@@ -34,9 +34,9 @@
   "lastTradedPrice": 84.7,
   "change": 0.6,
   "changePercentage": 0.71343637,
-  "crossingVolume": 50327,
-  "tradesTime": 1794460515249,
-  "quantity": 6
+  "crossingVolume": 50707,
+  "tradesTime": 1794461567552,
+  "quantity": 350
  },
  {
   "id": 472,
@@ -47,9 +47,9 @@
   "lastTradedPrice": 102.0,
   "change": -0.5,
   "changePercentage": -0.4878049,
-  "crossingVolume": 84399,
-  "tradesTime": 1794460582694,
-  "quantity": 4678
+  "crossingVolume": 84586,
+  "tradesTime": 1794461274789,
+  "quantity": 92
  },
  {
   "id": 406,
@@ -57,12 +57,12 @@
   "open": 159.0,
   "high": 160.0,
   "low": 157.5,
-  "lastTradedPrice": 159.0,
-  "change": -1.0,
-  "changePercentage": -0.625,
-  "crossingVolume": 4632,
-  "tradesTime": 1794460351806,
-  "quantity": 110
+  "lastTradedPrice": 160.0,
+  "change": 0.0,
+  "changePercentage": 0.0,
+  "crossingVolume": 4661,
+  "tradesTime": 1794461355003,
+  "quantity": 29
  },
  {
   "id": 554,
@@ -86,9 +86,9 @@
   "lastTradedPrice": 53.5,
   "change": 0.4,
   "changePercentage": 0.75329566,
-  "crossingVolume": 2066,
-  "tradesTime": 1794457840279,
-  "quantity": 1
+  "crossingVolume": 2249,
+  "tradesTime": 1794460764691,
+  "quantity": 133
  },
  {
   "id": 2026,
@@ -96,12 +96,12 @@
   "open": 12.3,
   "high": 12.6,
   "low": 12.3,
-  "lastTradedPrice": 12.6,
-  "change": 0.2,
-  "changePercentage": 1.6129032,
-  "crossingVolume": 3106,
-  "tradesTime": 1794458726439,
-  "quantity": 5
+  "lastTradedPrice": 12.3,
+  "change": -0.1,
+  "changePercentage": -0.8064516,
+  "crossingVolume": 3233,
+  "tradesTime": 1794460831803,
+  "quantity": 76
  },
  {
   "id": 2035,
@@ -121,12 +121,12 @@
   "symbol": "AHUN.N0000",
   "open": 87.5,
   "high": 87.5,
-  "low": 86.4,
-  "lastTradedPrice": 86.4,
-  "change": -0.5,
-  "changePercentage": -0.575374,
-  "crossingVolume": 295,
-  "tradesTime": 1794460418271,
-  "quantity": 30
+  "low": 86.1,
+  "lastTradedPrice": 86.1,
+  "change": -0.8,
+  "changePercentage": -0.9205984,
+  "crossingVolume": 320,
+  "tradesTime": 1794461492754,
+  "quantity": 1
  }
 ]
