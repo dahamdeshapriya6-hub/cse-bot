@@ -107,7 +107,9 @@ def risk(a, low):
     w = [a[i + 20] / a[i] - 1 for i in range(len(a) - 20)]
     worst = round(100 * min(w), 1) if w else None
     p10 = round(100 * sum(x <= -.10 for x in w) / len(w)) if w else None
-    level = "High" if vol > 3 or low else "Low" if vol < 1.5 else "Medium"
+    p, wv = p10 or 0, worst if worst is not None else 0
+    level = ("High" if vol > 3 or low or p >= 20 or wv <= -30
+             else "Low" if vol < 1.5 and p < 8 and wv > -15 else "Medium")
     return round(vol, 2), worst, p10, level
 
 

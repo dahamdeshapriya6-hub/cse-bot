@@ -31,6 +31,7 @@ svg{display:block;width:100%;height:auto}small{color:var(--mute)}
 <p class="sub" id="asof">Loading…</p>
 <div class="panel"><div class="grid" id="breadth"></div></div>
 <div class="panel" id="mkt"></div>
+<div class="panel" id="mnews" hidden></div>
 <div class="panel" id="favp" hidden><h2>★ My favourites</h2><div class="grid" id="favs"></div><small>Saved on this device and browser only.</small></div>
 <div class="panel">
 <div class="ctl"><input id="q" placeholder="Search share or company">
@@ -47,8 +48,9 @@ svg{display:block;width:100%;height:auto}small{color:var(--mute)}
 <p><small>Forecasts are statistical ranges from past price movement, not predictions. They do not know about news, results or policy changes. This is not investment advice; consider a licensed broker before investing.</small></p></div>
 </main>
 <script>
-const $=id=>document.getElementById(id);let R,cur,fav=[];
+const $=id=>document.getElementById(id);let R,N,cur,fav=[];
 try{fav=JSON.parse(localStorage.getItem("cse_fav")||"[]")}catch(e){}
+const nl=a=>a.map(n=>`<li><a href="${n.link}" target="_blank" rel="noopener" style="color:var(--acc)">${n.title.replace(/</g,"&lt;")}</a> <small>${n.source}${n.date?" · "+n.date:""}</small>${(n.tags||[]).map(t=>` <span class="b flat" style="font-size:11px">${t}</span>`).join("")}</li>`).join("");
 const rc=t=>t=="High"?"dn":t=="Medium"?"flat":"up";
 const cls=t=>t=="Rising"?"up":t=="Declining"?"dn":"flat";
 const pc=v=>v==null?"–":`<span class="${v>=0?'up':'dn'}">${v>=0?"+":""}${v.toFixed(1)}%</span>`;
@@ -85,7 +87,9 @@ ${spark(x.spark,700,200,"var(--acc)")}<small>Last 60 trading days${x.splitAdjust
 <div class="grid" style="margin-bottom:12px"><div class="stat"><span>Risk level</span><b class="${rc(x.risk)}">${x.risk}</b></div><div class="stat"><span>Typical daily swing</span><b>${x.vol}%</b></div><div class="stat"><span>Worst 20-day fall (1 yr)</span><b class="dn">${x.worst20}%</b></div><div class="stat"><span>20-day periods with a 10%+ fall</span><b>${x.pDrop10}%</b></div></div>
 <p><b>Why ${x.trend}:</b> ${x.why.length?x.why.join(", ")+".":"signals are mixed or the share is not trading."}${x.lowActivity?" <span class='flat'>Rarely traded: prices may jump and be hard to buy or sell.</span>":""}</p>
 ${fc?`<div class="wrap" style="max-height:none"><table style="min-width:560px"><thead><tr><th>Forecast</th><th>Likely range (80%)</th><th>Middle</th><th>Chance of rise</th><th>Direction right*</th><th>Range hit**</th></tr></thead><tbody>${H.map(([k,n])=>{const f=fc[k],a=acc(x,k);return`<tr><td>${n}</td><td>${fm(f[0])} – ${fm(f[2])}</td><td>${fm(f[1])}</td><td>${f[3]}%</td><td>${a?`${ac(x,k)} <small>(rose ${a[3]}%)</small>`:"–"}</td><td>${a?a[1]+"%":"–"}</td></tr>`}).join("")}</tbody></table></div>
+${N&&N.byShare[x.symbol]?`<h2 style="margin-top:14px">Recent news</h2><ul style="margin:0;padding-left:18px">${nl(N.byShare[x.symbol])}</ul><small>Matched by company name or share code, so check the headline is really about this company.</small>`:`<p class="mute"><small>${N?"No recent headlines found for this company.":""}</small></p>`}
 <small>*How often the forecast got up or down right for this share over the past year. "Rose X%" is how often the share simply went up; if "direction right" is not clearly above 50% and above that, the forecast adds little. **How often the real price stayed inside the likely range (should be about 80%). The 1-year range cannot be tested with only one year of data.</small>`:"<p class='mute'>No recent trades, so no forecast.</p>"}`;bind()}
+fetch("data/news.json").then(r=>r.ok?r.json():null).then(n=>{N=n;if(n&&n.market.length){const m=$("mnews");m.hidden=false;m.innerHTML=`<h2>Market and economy news</h2><ul style="margin:0;padding-left:18px">${nl(n.market.slice(0,8))}</ul><small>Headlines only, from public news feeds. Updated ${n.generated.replace("T"," ")} UTC. News can explain moves but does not predict them.</small>`}if(R)render()}).catch(()=>{});
 fetch("data/results.json").then(r=>r.json()).then(j=>{R=j;
 const td=new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric",timeZone:"Asia/Colombo"});
 const age=Math.round((Date.now()-new Date(j.asOf))/864e5);
