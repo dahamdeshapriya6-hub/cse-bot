@@ -5,11 +5,11 @@
   "open": 1013.0,
   "high": 1039.5,
   "low": 1013.0,
-  "lastTradedPrice": 1039.0,
-  "change": 20.5,
-  "changePercentage": 2.012764,
-  "crossingVolume": 13,
-  "tradesTime": 1794464560081,
+  "lastTradedPrice": 1018.5,
+  "change": 0.0,
+  "changePercentage": 0.0,
+  "crossingVolume": 21,
+  "tradesTime": 1794471822094,
   "quantity": 1
  },
  {
@@ -21,9 +21,9 @@
   "lastTradedPrice": 86.1,
   "change": 0.1,
   "changePercentage": 0.11627907,
-  "crossingVolume": 1040,
-  "tradesTime": 1794464802538,
-  "quantity": 469
+  "crossingVolume": 1045,
+  "tradesTime": 1794473174209,
+  "quantity": 5
  },
  {
   "id": 2065,
@@ -31,25 +31,25 @@
   "open": 84.5,
   "high": 84.9,
   "low": 84.4,
-  "lastTradedPrice": 84.5,
-  "change": 0.4,
-  "changePercentage": 0.47562426,
-  "crossingVolume": 64694,
-  "tradesTime": 1794465511246,
-  "quantity": 30
+  "lastTradedPrice": 84.7,
+  "change": 0.6,
+  "changePercentage": 0.71343637,
+  "crossingVolume": 180238,
+  "tradesTime": 1794473973049,
+  "quantity": 2000
  },
  {
   "id": 472,
   "symbol": "ACL.N0000",
   "open": 102.0,
-  "high": 103.0,
+  "high": 104.75,
   "low": 102.0,
-  "lastTradedPrice": 102.75,
-  "change": 0.25,
-  "changePercentage": 0.24390244,
-  "crossingVolume": 110077,
-  "tradesTime": 1794465698392,
-  "quantity": 5
+  "lastTradedPrice": 104.25,
+  "change": 1.75,
+  "changePercentage": 1.7073171,
+  "crossingVolume": 748766,
+  "tradesTime": 1794473987044,
+  "quantity": 25
  },
  {
   "id": 406,
@@ -57,12 +57,12 @@
   "open": 159.0,
   "high": 162.75,
   "low": 157.5,
-  "lastTradedPrice": 160.0,
-  "change": 0.0,
-  "changePercentage": 0.0,
-  "crossingVolume": 4672,
-  "tradesTime": 1794465010475,
-  "quantity": 10
+  "lastTradedPrice": 159.5,
+  "change": -0.5,
+  "changePercentage": -0.3125,
+  "crossingVolume": 8109,
+  "tradesTime": 1794473038723,
+  "quantity": 17
  },
  {
   "id": 554,
@@ -70,38 +70,38 @@
   "open": 4.8,
   "high": 5.0,
   "low": 4.8,
-  "lastTradedPrice": 4.8,
-  "change": -0.1,
-  "changePercentage": -2.0408163,
-  "crossingVolume": 203157,
-  "tradesTime": 1794464930920,
-  "quantity": 2037
+  "lastTradedPrice": 5.0,
+  "change": 0.1,
+  "changePercentage": 2.0408163,
+  "crossingVolume": 653029,
+  "tradesTime": 1794473979526,
+  "quantity": 3000
  },
  {
   "id": 163,
   "symbol": "AGAL.N0000",
   "open": 54.0,
-  "high": 54.3,
-  "low": 53.5,
-  "lastTradedPrice": 53.5,
-  "change": 0.4,
-  "changePercentage": 0.75329566,
-  "crossingVolume": 2260,
-  "tradesTime": 1794465754555,
-  "quantity": 10
+  "high": 54.5,
+  "low": 53.0,
+  "lastTradedPrice": 54.1,
+  "change": 1.0,
+  "changePercentage": 1.8832392,
+  "crossingVolume": 52646,
+  "tradesTime": 1794473500837,
+  "quantity": 3115
  },
  {
   "id": 2026,
   "symbol": "AGST.N0000",
   "open": 12.3,
   "high": 12.6,
-  "low": 12.1,
-  "lastTradedPrice": 12.5,
-  "change": 0.1,
-  "changePercentage": 0.8064516,
-  "crossingVolume": 246485,
-  "tradesTime": 1794465380219,
-  "quantity": 1
+  "low": 12.0,
+  "lastTradedPrice": 12.1,
+  "change": -0.3,
+  "changePercentage": -2.419355,
+  "crossingVolume": 467303,
+  "tradesTime": 1794473941236,
+  "quantity": 500
  },
  {
   "id": 2035,
@@ -112,21 +112,21 @@
   "lastTradedPrice": 11.5,
   "change": 0.0,
   "changePercentage": 0.0,
-  "crossingVolume": 2,
-  "tradesTime": 1794458084950,
-  "quantity": 1
+  "crossingVolume": 2001,
+  "tradesTime": 1794471416448,
+  "quantity": 100
  },
  {
   "id": 144,
   "symbol": "AHUN.N0000",
   "open": 87.5,
   "high": 87.5,
-  "low": 85.5,
+  "low": 85.4,
   "lastTradedPrice": 85.5,
   "change": -1.4,
   "changePercentage": -1.6110471,
-  "crossingVolume": 29434,
-  "tradesTime": 1794465561500,
-  "quantity": 727
+  "crossingVolume": 59917,
+  "tradesTime": 1794473867391,
+  "quantity": 200
  }
 ]
