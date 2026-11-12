@@ -50,20 +50,53 @@ def trend(a):
     return sc, "Rising" if sc >= 2 else "Declining" if sc <= -2 else "Sideways", why
 
 
-def forecast(a):
+HS = (1, 5, 7, 14, 20, 30, 252)   # forecast horizons, in trading days
+BT = (1, 5, 7, 14, 20, 30)        # horizons that can be tested on past data
+
+
+def params(a):
     lr = [max(-.2, min(.2, math.log(a[i] / a[i - 1]))) for i in range(1, len(a)) if a[i - 1] > 0 and a[i] > 0]
     rec = lr[-20:]
     rms = lambda v: math.sqrt(sum(x * x for x in v) / max(1, len(v)))
     sig = max(.002, .5 * rms(lr[-120:]) + .5 * rms(rec))
     mu = max(-.003, min(.003, .15 * sum(rec) / max(1, len(rec))))
+    return mu, sig
+
+
+def band(last, mu, sig, h):
+    m, s = mu * h, sig * math.sqrt(h)
+    z = 1.2816 * s
+    return (last * math.exp(m - z), last * math.exp(m), last * math.exp(m + z),
+            50 * (1 + math.erf(m / (s * math.sqrt(2)))))
+
+
+def forecast(a):
+    mu, sig = params(a)
     out = {}
-    for h in (1, 7, 21, 252):
-        m, s = mu * h, sig * math.sqrt(h)
-        z = 1.2816 * s
-        out[str(h)] = [round(a[-1] * math.exp(m - z), 2), round(a[-1] * math.exp(m), 2),
-                       round(a[-1] * math.exp(m + z), 2),
-                       round(50 * (1 + math.erf(m / (s * math.sqrt(2)))))]
+    for h in HS:
+        lo, mid, hi, p = band(a[-1], mu, sig, h)
+        out[str(h)] = [round(lo, 2), round(mid, 2), round(hi, 2), round(p)]
     return out
+
+
+def accuracy(a):
+    """Replay the forecast method on this share's own past.
+    Per horizon: [direction right %, price inside range %, tests, share rose %]."""
+    n = len(a)
+    st = {h: [0, 0, 0, 0, 0] for h in BT}   # tests, dirRight, dirTotal, inRange, rose
+    for t in range(60, n - 1):
+        mu, sig = params(a[max(0, t - 120):t + 1])
+        for h in BT:
+            if t + h >= n:
+                continue
+            lo, mid, hi, p = band(a[t], mu, sig, h)
+            s = st[h]; s[0] += 1
+            s[3] += lo <= a[t + h] <= hi
+            if a[t + h] != a[t]:
+                s[2] += 1; s[4] += a[t + h] > a[t]
+                s[1] += (p >= 50) == (a[t + h] > a[t])
+    return {str(h): [round(100 * s[1] / s[2]), round(100 * s[3] / s[0]), s[0], round(100 * s[4] / s[2])]
+            for h, s in st.items() if s[2] >= 30}
 
 
 def num(x):
@@ -97,13 +130,14 @@ def main():
         last20 = [x for x in v if x[0] in recent]
         turn = sum(x[1] * x[2] for x in last20) / 20
         res.append({"symbol": sym, "name": names.get(sym, ""), "last": raw[-1], "date": v[-1][0],
-                    "ret1": ret(1), "ret5": ret(5), "ret20": ret(20), "ret60": ret(60),
+                    **{f"ret{k}": ret(k) for k in (1, 5, 7, 14, 20, 30, 60)},
                     "sma5": round(sma(a, 5), 2), "sma20": round(sma(a, 20), 2),
                     "sma50": round(sma(a, 50), 2) if len(a) >= 50 else None, "rsi": round(rsi(a)),
                     "hi52": round(max(a), 2), "lo52": round(min(a), 2),
                     "turnover": round(turn), "daysTraded": len(last20), "lowActivity": turn < 500000 or len(last20) < 10,
                     "splitAdjusted": nsplit, "trend": label, "score": sc, "why": why,
                     "forecast": forecast(a) if not inactive else None,
+                    "acc": accuracy(a) if not inactive else {},
                     "spark": [round(x, 2) for x in a[-60:]], "sparkDates": [x[0] for x in v[-60:]]})
         for t in range(25, len(a) - 5):
             lab = trend(a[:t + 1])[1]

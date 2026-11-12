@@ -3,63 +3,88 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CSE Trend Dashboard</title>
 <style>
-:root{--bg:#f3f6f5;--panel:#fff;--ink:#15262b;--mute:#5d7076;--line:#d8e2e0;--up:#0b8a5b;--dn:#c43d3d;--flat:#a07a12;--acc:#1d5c75}
-@media(prefers-color-scheme:dark){:root{--bg:#0f1b1f;--panel:#16272c;--ink:#e6eeee;--mute:#8da3a8;--line:#27393e;--up:#3ec98f;--dn:#f06a6a;--flat:#e0b84a;--acc:#6bb7d4}}
+:root{--bg:#f3f6f5;--panel:#fff;--ink:#15262b;--mute:#5d7076;--line:#d8e2e0;--up:#0b8a5b;--dn:#c43d3d;--flat:#a07a12;--acc:#1d5c75;--star:#d99a00}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1b1f;--panel:#16272c;--ink:#e6eeee;--mute:#8da3a8;--line:#27393e;--up:#3ec98f;--dn:#f06a6a;--flat:#e0b84a;--acc:#6bb7d4;--star:#f2c14e}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Segoe UI",system-ui,sans-serif}
-main{max-width:1000px;margin:0 auto;padding:18px 14px 40px}
+main{max-width:1050px;margin:0 auto;padding:18px 14px 40px}
 h1{font:600 26px Georgia,serif;margin:0}h2{font-size:16px;margin:0 0 8px}
-.sub{color:var(--mute);margin:2px 0 14px}
+.sub{color:var(--mute);margin:2px 0 14px}.sub b{color:var(--ink)}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
-.stat span{display:block;color:var(--mute);font-size:13px}.stat b{font-size:19px}
+.stat span{display:block;color:var(--mute);font-size:13px}.stat b{font-size:18px}
 .up{color:var(--up)}.dn{color:var(--dn)}.flat{color:var(--flat)}.mute{color:var(--mute)}
 .ctl{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
 input,select{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit}
-.wrap{overflow-x:auto;max-height:520px;overflow-y:auto}
-table{width:100%;border-collapse:collapse;min-width:620px}
+.wrap{overflow-x:auto;max-height:540px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;min-width:640px}
 th,td{padding:8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
 th{position:sticky;top:0;background:var(--panel);color:var(--mute);font-weight:500;font-size:13px}
 th:first-child,td:first-child{text-align:left}
 tbody tr{cursor:pointer}tbody tr:hover,tr.sel{background:color-mix(in srgb,var(--acc) 12%,transparent)}
 .b{padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;border:1px solid currentColor}
+.star{background:none;border:0;color:var(--mute);font-size:20px;cursor:pointer;padding:0 4px}.star.on{color:var(--star)}
+.card{border:1px solid var(--line);border-radius:10px;padding:10px;cursor:pointer;background:var(--bg)}
+.card:hover{border-color:var(--acc)}
 svg{display:block;width:100%;height:auto}small{color:var(--mute)}
 </style></head><body><main>
 <h1>CSE Trend Dashboard</h1>
 <p class="sub" id="asof">Loading…</p>
 <div class="panel"><div class="grid" id="breadth"></div></div>
+<div class="panel" id="favp" hidden><h2>★ My favourites</h2><div class="grid" id="favs"></div><small>Saved on this device and browser only.</small></div>
 <div class="panel">
-<div class="ctl"><input id="q" placeholder="Search share or company"><select id="f"><option value="">All trends</option><option>Rising</option><option>Declining</option><option>Sideways</option></select>
-<select id="s"><option value="symbol">Sort: name</option><option value="ret5">Sort: 5-day change</option><option value="ret20">Sort: 20-day change</option><option value="score">Sort: signal score</option></select>
-<label><input type="checkbox" id="lo" checked> hide rarely-traded shares</label></div>
-<div class="wrap"><table><thead><tr><th>Share</th><th>Last (LKR)</th><th>5-day</th><th>20-day</th><th>Trend</th><th>60 days</th></tr></thead><tbody id="rows"></tbody></table></div></div>
+<div class="ctl"><input id="q" placeholder="Search share or company">
+<select id="f"><option value="">All trends</option><option>Rising</option><option>Declining</option><option>Sideways</option></select>
+<select id="p" title="Period"><option value="1">1 day</option><option value="5" selected>5 days</option><option value="7">7 days</option><option value="14">14 days</option><option value="20">20 days</option><option value="30">30 days</option><option value="60">60 days</option></select>
+<select id="s"><option value="symbol">Sort: name</option><option value="chg">Sort: change in period</option><option value="acc">Sort: forecast accuracy</option></select>
+<label><input type="checkbox" id="lo" checked> hide rarely-traded</label>
+<label><input type="checkbox" id="fo"> ★ only</label></div>
+<div class="wrap"><table><thead><tr><th>Share</th><th>Last (LKR)</th><th id="hc">Change</th><th>Trend</th><th id="ha">Forecast right</th><th>★</th><th>60 days</th></tr></thead><tbody id="rows"></tbody></table></div>
+<small>All periods are trading days. "Forecast right" = how often this share's forecast got the direction right in the past year for the same period (50% = coin flip).</small></div>
 <div class="panel" id="det" hidden></div>
-<div class="panel"><h2>How reliable are the signals?</h2><div id="bt"></div>
+<div class="panel"><h2>How reliable is this?</h2><div id="bt"></div>
 <p><small>Forecasts are statistical ranges from past price movement, not predictions. They do not know about news, results or policy changes. This is not investment advice; consider a licensed broker before investing.</small></p></div>
 </main>
 <script>
-const $=id=>document.getElementById(id);let R,cur;
+const $=id=>document.getElementById(id);let R,cur,fav=[];
+try{fav=JSON.parse(localStorage.getItem("cse_fav")||"[]")}catch(e){}
 const cls=t=>t=="Rising"?"up":t=="Declining"?"dn":"flat";
 const pc=v=>v==null?"–":`<span class="${v>=0?'up':'dn'}">${v>=0?"+":""}${v.toFixed(1)}%</span>`;
 const fm=v=>v.toLocaleString("en-US",{maximumFractionDigits:2});
+const P=()=>$("p").value,acc=(x,k)=>x.acc&&x.acc[k];
+const ac=(x,k)=>{const a=acc(x,k);return a?`<span class="${a[0]>=55?'up':a[0]<50?'dn':'flat'}">${a[0]}%</span>`:"–"};
+const star=s=>`<button class="star ${fav.includes(s)?'on':''}" data-f="${s}" aria-label="Favourite">${fav.includes(s)?"★":"☆"}</button>`;
+function toggle(s){fav=fav.includes(s)?fav.filter(x=>x!=s):[...fav,s];try{localStorage.setItem("cse_fav",JSON.stringify(fav))}catch(e){}render()}
 function spark(a,w,h,col){const lo=Math.min(...a),hi=Math.max(...a),X=i=>i*(w-2)/(a.length-1)+1,Y=v=>h-2-(v-lo)/(hi-lo||1)*(h-4);
-return`<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="width:${w}px"><path d="${a.map((v,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(v).toFixed(1)).join("")}" fill="none" stroke="${col}" stroke-width="1.6"/></svg>`}
-function list(){const q=$("q").value.toLowerCase(),f=$("f").value,s=$("s").value,lo=$("lo").checked;
-let a=R.shares.filter(x=>(!f||x.trend==f)&&(!lo||!x.lowActivity)&&(x.symbol+x.name).toLowerCase().includes(q));
-a.sort((x,y)=>s=="symbol"?x.symbol.localeCompare(y.symbol):(y[s]??-999)-(x[s]??-999));
-$("rows").innerHTML=a.map(x=>`<tr data-s="${x.symbol}" class="${x.symbol==cur?'sel':''}"><td><b>${x.symbol}</b><br><small>${x.name}</small></td><td>${fm(x.last)}</td><td>${pc(x.ret5)}</td><td>${pc(x.ret20)}</td><td><span class="b ${cls(x.trend)}">${x.trend}</span></td><td>${spark(x.spark,90,26,"var(--acc)")}</td></tr>`).join("")||'<tr><td colspan="6">No shares match.</td></tr>';
-document.querySelectorAll("#rows tr[data-s]").forEach(t=>t.onclick=()=>{cur=t.dataset.s;list();detail()})}
+return`<svg viewBox="0 0 ${w} ${h}" style="width:${w}px;max-width:100%"><path d="${a.map((v,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(v).toFixed(1)).join("")}" fill="none" stroke="${col}" stroke-width="1.6"/></svg>`}
+function render(){list();favs();if(cur)detail()}
+function list(){const q=$("q").value.toLowerCase(),f=$("f").value,s=$("s").value,lo=$("lo").checked,fo=$("fo").checked,k=P();
+$("hc").textContent=`Change (${k}d)`;$("ha").textContent=`Forecast right (${k}d)`;
+let a=R.shares.filter(x=>(!f||x.trend==f)&&(!lo||!x.lowActivity||fav.includes(x.symbol))&&(!fo||fav.includes(x.symbol))&&(x.symbol+x.name).toLowerCase().includes(q));
+const v=x=>s=="chg"?x["ret"+k]:s=="acc"?(acc(x,k)||[])[0]:0;
+a.sort((x,y)=>s=="symbol"?x.symbol.localeCompare(y.symbol):(v(y)??-999)-(v(x)??-999));
+$("rows").innerHTML=a.map(x=>`<tr data-s="${x.symbol}" class="${x.symbol==cur?'sel':''}"><td><b>${x.symbol}</b><br><small>${x.name}</small></td><td>${fm(x.last)}</td><td>${pc(x["ret"+k])}</td><td><span class="b ${cls(x.trend)}">${x.trend}</span></td><td>${ac(x,k)}</td><td>${star(x.symbol)}</td><td>${spark(x.spark,90,26,"var(--acc)")}</td></tr>`).join("")||'<tr><td colspan="7">No shares match.</td></tr>';
+document.querySelectorAll("#rows tr[data-s]").forEach(t=>t.onclick=()=>{cur=t.dataset.s;render();$("det").scrollIntoView({behavior:"smooth",block:"nearest"})});bind()}
+function bind(){document.querySelectorAll(".star").forEach(b=>b.onclick=e=>{e.stopPropagation();toggle(b.dataset.f)})}
+function favs(){const a=fav.map(s=>R.shares.find(x=>x.symbol==s)).filter(Boolean),k=P();$("favp").hidden=!a.length;
+$("favs").innerHTML=a.map(x=>`<div class="card" data-c="${x.symbol}"><b>${x.symbol}</b> ${star(x.symbol)}<br><small>${x.name}</small><br>${fm(x.last)} · ${pc(x["ret"+k])} <small>${k}d</small><br><span class="b ${cls(x.trend)}">${x.trend}</span>${x.forecast?`<br><small>Tomorrow: ${fm(x.forecast["1"][0])}–${fm(x.forecast["1"][2])}</small>`:""}</div>`).join("");
+document.querySelectorAll("[data-c]").forEach(c=>c.onclick=()=>{cur=c.dataset.c;render();$("det").scrollIntoView({behavior:"smooth",block:"nearest"})});bind()}
 function detail(){const x=R.shares.find(s=>s.symbol==cur);if(!x)return;const d=$("det");d.hidden=false;
-const fc=x.forecast,H=[["Next trading day","1"],["Next 7 days","7"],["Next month","21"],["Next year (scenario)","252"]];
-d.innerHTML=`<h2>${x.symbol} <span class="mute" style="font-weight:400">${x.name}</span> <span class="b ${cls(x.trend)}">${x.trend}</span></h2>
+const fc=x.forecast,H=[[1,"Next trading day"],[5,"Next 5 days"],[7,"Next 7 days"],[14,"Next 14 days"],[20,"Next 20 days (about 1 month)"],[30,"Next 30 days"],[252,"Next year (scenario only)"]];
+d.innerHTML=`<h2>${x.symbol} ${star(x.symbol)} <span class="mute" style="font-weight:400">${x.name}</span> <span class="b ${cls(x.trend)}">${x.trend}</span></h2>
 ${spark(x.spark,700,200,"var(--acc)")}<small>Last 60 trading days${x.splitAdjusted?" (adjusted for a share split)":""}</small>
-<div class="grid" style="margin:12px 0"><div class="stat"><span>Last close</span><b>${fm(x.last)}</b></div><div class="stat"><span>20-day average</span><b>${fm(x.sma20)}</b></div><div class="stat"><span>RSI (14)</span><b>${x.rsi}</b></div><div class="stat"><span>1-year range</span><b>${fm(x.lo52)}–${fm(x.hi52)}</b></div><div class="stat"><span>Avg daily turnover</span><b>${fm(x.turnover)}</b></div></div>
+<div class="grid" style="margin:12px 0">${[1,5,7,14,20,30,60].map(k=>`<div class="stat"><span>${k}-day change</span><b>${pc(x["ret"+k])}</b></div>`).join("")}</div>
+<div class="grid" style="margin-bottom:12px"><div class="stat"><span>Last close</span><b>${fm(x.last)}</b></div><div class="stat"><span>20-day average</span><b>${fm(x.sma20)}</b></div><div class="stat"><span>RSI (14)</span><b>${x.rsi}</b></div><div class="stat"><span>1-year range</span><b>${fm(x.lo52)}–${fm(x.hi52)}</b></div><div class="stat"><span>Avg daily turnover</span><b>${fm(x.turnover)}</b></div></div>
 <p><b>Why ${x.trend}:</b> ${x.why.length?x.why.join(", ")+".":"signals are mixed or the share is not trading."}${x.lowActivity?" <span class='flat'>Rarely traded: prices may jump and be hard to buy or sell.</span>":""}</p>
-${fc?`<div class="wrap"><table style="min-width:0"><thead><tr><th>Forecast</th><th>Likely range (80%)</th><th>Middle</th><th>Chance of rise</th></tr></thead><tbody>${H.map(([n,k])=>`<tr><td>${n}</td><td>${fm(fc[k][0])} – ${fm(fc[k][2])}</td><td>${fm(fc[k][1])}</td><td>${fc[k][3]}%</td></tr>`).join("")}</tbody></table></div>`:"<p class='mute'>No recent trades, so no forecast.</p>"}`;
-d.scrollIntoView({behavior:"smooth",block:"nearest"})}
+${fc?`<div class="wrap" style="max-height:none"><table style="min-width:560px"><thead><tr><th>Forecast</th><th>Likely range (80%)</th><th>Middle</th><th>Chance of rise</th><th>Direction right*</th><th>Range hit**</th></tr></thead><tbody>${H.map(([k,n])=>{const f=fc[k],a=acc(x,k);return`<tr><td>${n}</td><td>${fm(f[0])} – ${fm(f[2])}</td><td>${fm(f[1])}</td><td>${f[3]}%</td><td>${a?`${ac(x,k)} <small>(rose ${a[3]}%)</small>`:"–"}</td><td>${a?a[1]+"%":"–"}</td></tr>`}).join("")}</tbody></table></div>
+<small>*How often the forecast got up or down right for this share over the past year. "Rose X%" is how often the share simply went up; if "direction right" is not clearly above 50% and above that, the forecast adds little. **How often the real price stayed inside the likely range (should be about 80%). The 1-year range cannot be tested with only one year of data.</small>`:"<p class='mute'>No recent trades, so no forecast.</p>"}`;bind()}
 fetch("data/results.json").then(r=>r.json()).then(j=>{R=j;
-$("asof").textContent=`Prices as of ${j.asOf} · updated ${j.generated.replace("T"," ")} UTC · ${j.shares.length} shares`;
+const td=new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric",timeZone:"Asia/Colombo"});
+const age=Math.round((Date.now()-new Date(j.asOf))/864e5);
+$("asof").innerHTML=`Today: <b>${td}</b> · Latest prices: <b>${j.asOf}</b> (market close)${age>4?' <span class="dn">· data looks old, check the daily update</span>':""} · ${j.shares.length} shares`;
 const c={};j.shares.forEach(x=>c[x.trend]=(c[x.trend]||0)+1);
 $("breadth").innerHTML=[["Rising","up"],["Sideways","flat"],["Declining","dn"],["Inactive","mute"]].map(([k,s])=>`<div class="stat"><span>${k}</span><b class="${s}">${c[k]||0}</b></div>`).join("");
-const b=j.backtest;$("bt").innerHTML=b.All?`<p>Over the past year, across all shares, a share was higher 5 trading days later <b>${b.All.pctUp}%</b> of the time. After a <b class="up">Rising</b> signal it was higher <b>${b.Rising?b.Rising.pctUp:"–"}%</b> of the time; after <b class="dn">Declining</b>, <b>${b.Declining?b.Declining.pctUp:"–"}%</b>. If these numbers are close together, the signal adds little.</p>`:"";
-["q","f","s","lo"].forEach(i=>$(i).oninput=list);list()}).catch(()=>$("asof").textContent="Could not load data/results.json. Run the workflow first.");
+const b=j.backtest;$("bt").innerHTML=(b.All?`<p>Trend labels: across all shares a share was higher 5 days later <b>${b.All.pctUp}%</b> of the time. After <b class="up">Rising</b> it was higher <b>${b.Rising?b.Rising.pctUp:"–"}%</b>; after <b class="dn">Declining</b>, <b>${b.Declining?b.Declining.pctUp:"–"}%</b>. If these are close, the label adds little.</p>`:"")+`<p id="fa"></p>`;
+["q","f","s","lo","fo"].forEach(i=>$(i).oninput=render);$("p").oninput=()=>{render();rel()};render();rel()}).catch(()=>$("asof").textContent="Could not load data/results.json. Run the workflow first.");
+function rel(){const k=P(),v=R.shares.map(x=>acc(x,k)).filter(Boolean).map(a=>a[0]).sort((a,b)=>a-b);
+$("fa").innerHTML=v.length?`Forecasts for ${k} days: the typical share's forecast got the direction right <b>${v[Math.floor(v.length/2)]}%</b> of the time (50% = coin flip).`:""}
 </script></body></html>
