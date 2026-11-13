@@ -32,6 +32,7 @@ svg{display:block;width:100%;height:auto}small{color:var(--mute)}
 <div class="panel"><div class="grid" id="breadth"></div></div>
 <div class="panel" id="mkt"></div>
 <div class="panel" id="mnews" hidden></div>
+<div class="panel" id="upc" hidden></div>
 <div class="panel" id="favp" hidden><h2>★ My favourites</h2><div class="grid" id="favs"></div><small>Saved on this device and browser only.</small></div>
 <div class="panel">
 <div class="ctl"><input id="q" placeholder="Search share or company">
@@ -48,20 +49,26 @@ svg{display:block;width:100%;height:auto}small{color:var(--mute)}
 <p><small>Forecasts are statistical ranges from past price movement, not predictions. They do not know about news, results or policy changes. This is not investment advice; consider a licensed broker before investing.</small></p></div>
 </main>
 <script>
-const $=id=>document.getElementById(id);let R,N,F,cur,fav=[];
+const $=id=>document.getElementById(id);let R,N,F,A,cur,fav=[];
 try{fav=JSON.parse(localStorage.getItem("cse_fav")||"[]")}catch(e){}
 const nl=a=>a.map(n=>`<li><a href="${n.link}" target="_blank" rel="noopener" style="color:var(--acc)">${n.title.replace(/</g,"&lt;")}</a> <small>${n.source}${n.date?" · "+n.date:""}</small>${(n.tags||[]).map(t=>` <span class="b flat" style="font-size:11px">${t}</span>`).join("")}</li>`).join("");
+function anns(x){const s=A&&A[x.symbol];if(!s||(!s.ann.length&&!s.reports.length))return"";
+const dl=a=>[a.xd&&"ex-date "+a.xd,a.recordDate&&"record "+a.recordDate,a.paymentDate&&"payment "+a.paymentDate,a.agmDate&&"AGM "+a.agmDate].filter(Boolean).join(" · ");
+return(s.ann.length?`<h2 style="margin-top:14px">Company announcements</h2><ul style="margin:0;padding-left:18px">${s.ann.map(a=>`<li><b>${esc(a.announcementCategory)}</b> <small>${esc(a.dateOfAnnouncement)}</small>${dl(a)?`<br><small>${esc(dl(a))}</small>`:""}${a.remarks?`<br><small>${esc(a.remarks)}</small>`:""}</li>`).join("")}</ul>`:"")+
+(s.reports.length?`<h2 style="margin-top:14px">Latest financial reports (PDF)</h2><ul style="margin:0;padding-left:18px">${s.reports.map(r=>`<li><a href="${esc(r.link)}" target="_blank" rel="noopener" style="color:var(--acc)">${esc(r.title)}</a> <small>${esc(r.date)}</small></li>`).join("")}</ul><small>Open the report to check profit, debt and dividends yourself.</small>`:"")}
 function facts(x){const r=F&&F[x.symbol],i=(r&&r.info)||{},m=r&&r.manual,bk=Object.keys(i).find(k=>/beta/i.test(k)),c=[];
 if(i.marketCap)c.push(["Market value",fm(i.marketCap/1e9)+" bn LKR"]);
 if(i.foreignPercentage!=null)c.push(["Foreign holding",fm(+i.foreignPercentage)+"%"]);
 if(i.quantityIssued)c.push(["Shares issued",fm(i.quantityIssued/1e6)+" million"]);
-if(bk&&!isNaN(+i[bk]))c.push(["Beta (follows market)",fm(+i[bk])]);
+const bt=r&&r.beta&&r.beta.triASIBetaValue;if(bt!=null)c.push(["Beta vs market (1 = same swings)",fm(+bt)]);else if(bk&&!isNaN(+i[bk]))c.push(["Beta (follows market)",fm(+i[bk])]);
 if(m){if(m.per)c.push(["PER (price / profit)",m.per+"x"]);if(m.pbv)c.push(["PBV (price / book value)",m.pbv+"x"]);if(m.yield!=null)c.push(["Dividend yield",m.yield+"%"])}
 const tg=((N&&N.byShare[x.symbol])||[]).flatMap(n=>n.tags||[]);
 const L=[[!x.lowActivity,"Trades often enough to buy and sell easily"],[x.risk!="High","Risk level is not High"],[!tg.includes("Warning"),"No warning headlines in recent news"],[x.rsi<70&&(x.ret20==null||x.ret20<25),"Price has not shot up fast (RSI under 70, under 25% gain in 20 days)"]];
+const an=(A&&A[x.symbol]&&A[x.symbol].ann)||[];L.push([!an.some(a=>/SUSPEN|DELIST|PENALT|BREACH|DEVIATION|DEFAULT/i.test((a.announcementCategory||"")+" "+(a.remarks||""))),"No suspension or listing-rule notices in recent announcements"]);
 if(m&&m.eps!=null)L.push([m.eps>0,"Company made a profit (EPS above zero)"]);if(m&&m.dps!=null)L.push([m.dps>0,"Paid a dividend"]);
 return(c.length?`<div class="grid" style="margin-bottom:12px">${c.map(([a,b])=>`<div class="stat"><span>${a}</span><b>${b}</b></div>`).join("")}</div>`:"")+
-`<h2>Checklist <small style="font-weight:400">(helps you think; it does not say buy or sell)</small></h2><ul style="list-style:none;margin:0 0 6px;padding:0">${L.map(([o,t])=>`<li><b class="${o?"up":"dn"}">${o?"✔":"✖"}</b> ${t}</li>`).join("")}${m&&m.eps!=null?"":'<li><b class="flat">?</b> Profit and dividend not checked (add this share to manual_fundamentals.csv)</li>'}</ul><small>News is searched only for the 40 most traded shares.</small>`}
+`<h2>Checklist <small style="font-weight:400">(helps you think; it does not say buy or sell)</small></h2><ul style="list-style:none;margin:0 0 6px;padding:0">${L.map(([o,t])=>`<li><b class="${o?"up":"dn"}">${o?"✔":"✖"}</b> ${t}</li>`).join("")}${m&&m.eps!=null?"":'<li><b class="flat">?</b> Profit and dividend not checked (add this share to manual_fundamentals.csv)</li>'}</ul><small>News is searched only for the 40 most traded shares.</small>`+anns(x)}
+const esc=s=>String(s==null?"":s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 const rc=t=>t=="High"?"dn":t=="Medium"?"flat":"up";
 const cls=t=>t=="Rising"?"up":t=="Declining"?"dn":"flat";
 const pc=v=>v==null?"–":`<span class="${v>=0?'up':'dn'}">${v>=0?"+":""}${v.toFixed(1)}%</span>`;
@@ -103,6 +110,8 @@ ${N&&N.byShare[x.symbol]?`<h2 style="margin-top:14px">Recent news</h2><ul style=
 <small>*How often the forecast got up or down right for this share over the past year. "Rose X%" is how often the share simply went up; if "direction right" is not clearly above 50% and above that, the forecast adds little. **How often the real price stayed inside the likely range (should be about 80%). The 1-year range cannot be tested with only one year of data.</small>`:"<p class='mute'>No recent trades, so no forecast.</p>"}`;bind()}
 fetch("data/news.json").then(r=>r.ok?r.json():null).then(n=>{N=n;if(n&&n.market.length){const m=$("mnews");m.hidden=false;m.innerHTML=`<h2>Market and economy news</h2><ul style="margin:0;padding-left:18px">${nl(n.market.slice(0,8))}</ul><small>Headlines only, from public news feeds. Updated ${n.generated.replace("T"," ")} UTC. News can explain moves but does not predict them.</small>`}if(R)render()}).catch(()=>{});
 fetch("data/fundamentals.json").then(r=>r.ok?r.json():null).then(f=>{if(f){F=f.shares;if(R)render()}}).catch(()=>{});
+fetch("data/announcements.json").then(r=>r.ok?r.json():null).then(a=>{if(!a)return;A=a.byShare;if(a.upcoming.length){const u=$("upc");u.hidden=false;
+u.innerHTML=`<h2>Upcoming dividends and share events</h2><ul style="margin:0;padding-left:18px">${a.upcoming.slice(0,10).map(e=>`<li><b>${esc(e.company)}</b> · ${esc(e.announcementCategory)}<br><small>${esc([e.xd&&"ex-date "+e.xd,e.recordDate&&"record "+e.recordDate,e.paymentDate&&"payment "+e.paymentDate,e.remarks].filter(Boolean).join(" · "))}</small></li>`).join("")}</ul><small>You must own the share before the ex-date to receive the dividend. Dates come from CSE announcements; check the notice on cse.lk.</small>`}if(R)render()}).catch(()=>{});
 fetch("data/results.json").then(r=>r.json()).then(j=>{R=j;
 const td=new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric",timeZone:"Asia/Colombo"});
 const age=Math.round((Date.now()-new Date(j.asOf))/864e5);

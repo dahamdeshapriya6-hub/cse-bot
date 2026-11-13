@@ -1,4 +1,5 @@
-"""Step 6: company facts for every share -> data/fundamentals.json
+"""Step 6: company facts for every share -> data/fundamentals.json,
+plus company announcements, financial reports and upcoming dividends -> data/announcements.json
  1. Asks the CSE feed for each company's summary (market value, foreign holding, etc.).
     Refreshed once a week per share, so daily runs stay fast.
  2. Optional: reads data/manual_fundamentals.csv  (symbol,eps,navps,dps)
@@ -6,6 +7,7 @@
  3. First run only: tries a few other CSE endpoints and saves what they return to
     data/probe_fundamentals.json, so we can see what else is available."""
 import csv, json, os, time, urllib.parse, urllib.request
+from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 
 BASE = "https://www.cse.lk/api/"
@@ -44,15 +46,73 @@ def probe(sym):
     print("Probe saved to data/probe_fundamentals.json")
 
 
+def pdate(s):
+    for f in ("%d %b %Y", "%d/%b/%Y", "%d-%b-%Y", "%Y-%m-%d", "%d %b %Y %I:%M:%S %p"):
+        try: return datetime.strptime(str(s).strip().title(), f).date()
+        except Exception: pass
+    return None
+
+
+def announcements(syms, names):
+    """Company announcements and financial reports from the CSE feed -> data/announcements.json"""
+    path = f"{D}/announcements_store.json"
+    try: store = json.load(open(path, encoding="utf-8"))
+    except Exception: store = {}
+    ap, fin = store.get("approved", {}), store.get("financial", {})
+    try:
+        for a in call("approvedAnnouncement", {}).get("approvedAnnouncements", []):
+            ap[str(a["id"])] = {k: a.get(k) for k in ("createdDate", "dateOfAnnouncement", "announcementCategory", "company",
+                                "symbol", "recordDate", "xd", "xr", "paymentDate", "agmDate", "remarks", "type") if a.get(k)}
+    except Exception as e: print("approvedAnnouncement failed:", str(e)[:80])
+    try:
+        for a in call("getFinancialAnnouncement", {}).get("reqFinancialAnnouncemnets", []):
+            fin[str(a["id"])] = {k: a.get(k) for k in ("path", "uploadedDate", "fileText", "name", "symbol") if a.get(k)}
+    except Exception as e: print("getFinancialAnnouncement failed:", str(e)[:80])
+    cut = (datetime.now(timezone.utc) - timedelta(days=120))
+    ap = {k: v for k, v in ap.items() if (v.get("createdDate") or 1e18) / 1000 >= cut.timestamp()}
+    fin = {k: v for k, v in fin.items() if (pdate(v.get("uploadedDate")) or date.today()) >= cut.date()}
+    store = {"approved": ap, "financial": fin}
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(store, f, ensure_ascii=False, separators=(",", ":"))
+
+    prefix, byname = defaultdict(list), defaultdict(list)
+    for sym in syms:
+        prefix[sym.split(".")[0]].append(sym)
+        byname[names.get(sym, "").upper().strip()].append(sym)
+    by = defaultdict(lambda: {"ann": [], "reports": []})
+    today, upcoming = date.today(), []
+    for a in sorted(ap.values(), key=lambda a: -(a.get("createdDate") or 0)):
+        tgt = byname.get(str(a.get("company", "")).upper().strip()) or prefix.get(str(a.get("symbol", "")).split(".")[0], [])
+        for sym in tgt:
+            if len(by[sym]["ann"]) < 6: by[sym]["ann"].append(a)
+        cat = str(a.get("announcementCategory", "")).upper()
+        if any(w in cat for w in ("DIVIDEND", "RIGHTS", "CAPITALI", "SPLIT", "SUBDIVISION")):
+            ds = [pdate(a.get(k)) for k in ("xd", "xr", "recordDate", "paymentDate")]
+            ds = [d for d in ds if d and d >= today]
+            if ds: upcoming.append((min(ds), {**a, "symbols": tgt}))
+    for a in sorted(fin.values(), key=lambda a: pdate(a.get("uploadedDate")) or date.min, reverse=True):
+        for sym in prefix.get(str(a.get("symbol", "")).split(".")[0], []):
+            if len(by[sym]["reports"]) < 3:
+                by[sym]["reports"].append({"title": a.get("fileText"), "date": a.get("uploadedDate", "")[:11],
+                                           "link": "https://cdn.cse.lk/" + a.get("path", "")})
+    out = {"generated": datetime.now(timezone.utc).isoformat(timespec="minutes"),
+           "upcoming": [u for _, u in sorted(upcoming, key=lambda t: t[0])][:25], "byShare": by}
+    with open(f"{D}/announcements.json", "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
+    print(f"Announcements: {len(ap)} kept, {len(fin)} financial reports, {len(upcoming)} upcoming dividend/rights events, "
+          f"{len(by)} shares with notices")
+
+
 def main():
     path = f"{D}/fundamentals.json"
     old = {}
     if os.path.exists(path):
         try: old = json.load(open(path, encoding="utf-8")).get("shares", {})
         except Exception: old = {}
-    syms = []
     with open(f"{D}/shares.csv", newline="", encoding="utf-8") as f:
-        syms = [r["symbol"] for r in csv.DictReader(f)]
+        rows = list(csv.DictReader(f))
+    syms = [r["symbol"] for r in rows]
+    names = {r["symbol"]: r["name"] for r in rows}
     last = {}
     try:
         last = {s["symbol"]: s["last"] for s in json.load(open(f"{D}/results.json"))["shares"]}
@@ -66,11 +126,13 @@ def main():
     shares, got, failed = {}, 0, 0
     for sym in syms:
         rec = old.get(sym, {})
-        if rec.get("info") and rec.get("fetched", "") >= week:
+        if rec.get("info") and rec.get("v") == 2 and rec.get("fetched", "") >= week:
             shares[sym] = rec; continue
         try:
-            info = (call("companyInfoSummery", {"symbol": sym}) or {}).get("reqSymbolInfo") or {}
-            rec = {"info": {k: v for k, v in info.items() if v is not None}, "fetched": date.today().isoformat()}
+            pl = call("companyInfoSummery", {"symbol": sym}) or {}
+            info = pl.get("reqSymbolInfo") or {}
+            rec = {"info": {k: v for k, v in info.items() if v is not None}, "beta": pl.get("reqSymbolBetaInfo"),
+                   "fetched": date.today().isoformat(), "v": 2}
             got += 1
         except Exception:
             failed += 1
@@ -95,8 +157,10 @@ def main():
                   f, ensure_ascii=False, separators=(",", ":"))
     print(f"Company facts: {got} refreshed, {failed} failed, {len(shares) - got - failed} reused; "
           f"manual figures for {sum(1 for r in shares.values() if 'manual' in r)} shares")
-    if not os.path.exists(f"{D}/probe_fundamentals.json") and syms:
-        probe(syms[0])
+    try:
+        announcements(syms, names)
+    except Exception as e:
+        print("Announcements skipped:", str(e)[:100])
 
 
 if __name__ == "__main__":
