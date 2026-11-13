@@ -95,6 +95,11 @@ def announcements(syms, names):
             if len(by[sym]["reports"]) < 3:
                 by[sym]["reports"].append({"title": a.get("fileText"), "date": a.get("uploadedDate", "")[:11],
                                            "link": "https://cdn.cse.lk/" + a.get("path", "")})
+    dv = [a for a in ap.values() if "DIVIDEND" in str(a.get("announcementCategory", "")).upper()]
+    print(f"Dividend-type announcements kept: {len(dv)}")
+    for a in dv[:3]:
+        print("  sample:", a.get("company"), "|", a.get("announcementCategory"), "| xd:", a.get("xd"),
+              "| record:", a.get("recordDate"), "| payment:", a.get("paymentDate"))
     out = {"generated": datetime.now(timezone.utc).isoformat(timespec="minutes"),
            "upcoming": [u for _, u in sorted(upcoming, key=lambda t: t[0])][:25], "byShare": by}
     with open(f"{D}/announcements.json", "w", encoding="utf-8") as f:

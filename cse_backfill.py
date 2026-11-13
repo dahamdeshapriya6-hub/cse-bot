@@ -24,6 +24,20 @@ def call(endpoint, params):
         return json.loads(r.read().decode("utf-8"))
 
 
+def keep_previous(found):
+    """Shares that did not trade today are missing from the summary: keep the ones we already knew."""
+    path = os.path.join(DATA, "shares.csv")
+    if os.path.exists(path):
+        n = len(found)
+        with open(path, newline="", encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                if r.get("id") and r.get("symbol"):
+                    found.setdefault(str(r["id"]), (r["symbol"], r.get("name", "")))
+        if len(found) > n:
+            print(f"  + {len(found) - n} earlier shares kept that were not in today's summary")
+    return found
+
+
 def shares():
     """Full list of listed shares: {id: (symbol, name)}.
     Tries the all-securities trade summary first, then other sources."""
@@ -41,7 +55,7 @@ def shares():
                 found.setdefault(str(r["id"]), (r["symbol"], r.get("name", "")))
             if len(found) > 50:
                 print(f"Share list from {endpoint}: {len(found)} shares")
-                return found
+                return keep_previous(found)
         except Exception as e:
             print(f"{endpoint} failed: {e}")
     path = os.path.join(DATA, "history.csv")

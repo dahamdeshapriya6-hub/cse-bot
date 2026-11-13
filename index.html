@@ -60,7 +60,7 @@ function facts(x){const r=F&&F[x.symbol],i=(r&&r.info)||{},m=r&&r.manual,bk=Obje
 if(i.marketCap)c.push(["Market value",fm(i.marketCap/1e9)+" bn LKR"]);
 if(i.foreignPercentage!=null)c.push(["Foreign holding",fm(+i.foreignPercentage)+"%"]);
 if(i.quantityIssued)c.push(["Shares issued",fm(i.quantityIssued/1e6)+" million"]);
-const bt=r&&r.beta&&r.beta.triASIBetaValue;if(bt!=null)c.push(["Beta vs market (1 = same swings)",fm(+bt)]);else if(bk&&!isNaN(+i[bk]))c.push(["Beta (follows market)",fm(+i[bk])]);
+const bt=r&&r.beta&&r.beta.triASIBetaValue;if(bt!=null)c.push(["Beta vs market (1 = same swings)",(+bt).toFixed(2)]);else if(bk&&!isNaN(+i[bk]))c.push(["Beta (follows market)",fm(+i[bk])]);
 if(m){if(m.per)c.push(["PER (price / profit)",m.per+"x"]);if(m.pbv)c.push(["PBV (price / book value)",m.pbv+"x"]);if(m.yield!=null)c.push(["Dividend yield",m.yield+"%"])}
 const tg=((N&&N.byShare[x.symbol])||[]).flatMap(n=>n.tags||[]);
 const L=[[!x.lowActivity,"Trades often enough to buy and sell easily"],[x.risk!="High","Risk level is not High"],[!tg.includes("Warning"),"No warning headlines in recent news"],[x.rsi<70&&(x.ret20==null||x.ret20<25),"Price has not shot up fast (RSI under 70, under 25% gain in 20 days)"]];
