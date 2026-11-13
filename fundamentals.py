@@ -61,8 +61,7 @@ def announcements(syms, names):
     ap, fin = store.get("approved", {}), store.get("financial", {})
     try:
         for a in call("approvedAnnouncement", {}).get("approvedAnnouncements", []):
-            ap[str(a["id"])] = {k: a.get(k) for k in ("createdDate", "dateOfAnnouncement", "announcementCategory", "company",
-                                "symbol", "recordDate", "xd", "xr", "paymentDate", "agmDate", "remarks", "type") if a.get(k)}
+            ap[str(a["id"])] = {k: v for k, v in a.items() if v and k not in ("logoUrl", "id")}
     except Exception as e: print("approvedAnnouncement failed:", str(e)[:80])
     try:
         for a in call("getFinancialAnnouncement", {}).get("reqFinancialAnnouncemnets", []):
@@ -98,8 +97,11 @@ def announcements(syms, names):
     dv = [a for a in ap.values() if "DIVIDEND" in str(a.get("announcementCategory", "")).upper()]
     print(f"Dividend-type announcements kept: {len(dv)}")
     for a in dv[:3]:
-        print("  sample:", a.get("company"), "|", a.get("announcementCategory"), "| xd:", a.get("xd"),
-              "| record:", a.get("recordDate"), "| payment:", a.get("paymentDate"))
+        print("  sample:", json.dumps({k: str(v)[:160] for k, v in a.items() if k != "createdDate"}))
+    cats = defaultdict(int)
+    for a in ap.values():
+        cats[a.get("announcementCategory", "?")] += 1
+    print("  categories:", dict(sorted(cats.items(), key=lambda t: -t[1])[:12]))
     out = {"generated": datetime.now(timezone.utc).isoformat(timespec="minutes"),
            "upcoming": [u for _, u in sorted(upcoming, key=lambda t: t[0])][:25], "byShare": by}
     with open(f"{D}/announcements.json", "w", encoding="utf-8") as f:
