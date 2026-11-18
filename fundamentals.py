@@ -85,10 +85,8 @@ def announcements(syms, names):
         for sym in tgt:
             if len(by[sym]["ann"]) < 6: by[sym]["ann"].append(a)
         cat = str(a.get("announcementCategory", "")).upper()
-        if any(w in cat for w in ("DIVIDEND", "RIGHTS", "CAPITALI", "SPLIT", "SUBDIVISION")):
-            ds = [pdate(a.get(k)) for k in ("xd", "xr", "recordDate", "paymentDate")]
-            ds = [d for d in ds if d and d >= today]
-            if ds: upcoming.append((min(ds), {**a, "symbols": tgt}))
+        if any(w in cat for w in ("DIVIDEND", "RIGHTS", "CAPITALI", "SPLIT", "SUBDIVISION", "TRADING HALT")):
+            upcoming.append((-(a.get("createdDate") or 0), {**a, "symbols": tgt}))   # newest first
     for a in sorted(fin.values(), key=lambda a: pdate(a.get("uploadedDate")) or date.min, reverse=True):
         for sym in prefix.get(str(a.get("symbol", "")).split(".")[0], []):
             if len(by[sym]["reports"]) < 3:
@@ -106,7 +104,7 @@ def announcements(syms, names):
            "upcoming": [u for _, u in sorted(upcoming, key=lambda t: t[0])][:25], "byShare": by}
     with open(f"{D}/announcements.json", "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
-    print(f"Announcements: {len(ap)} kept, {len(fin)} financial reports, {len(upcoming)} upcoming dividend/rights events, "
+    print(f"Announcements: {len(ap)} kept, {len(fin)} financial reports, {len(upcoming)} recent dividend/rights/halt notices, "
           f"{len(by)} shares with notices")
 
 
