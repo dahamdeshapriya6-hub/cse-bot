@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My CSE Portfolio</title>
+<style>
+:root{--bg:#f3f6f5;--panel:#fff;--ink:#15262b;--mute:#5d7076;--line:#d8e2e0;--up:#0b8a5b;--dn:#c43d3d;--flat:#a07a12;--acc:#1d5c75}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1b1f;--panel:#16272c;--ink:#e6eeee;--mute:#8da3a8;--line:#27393e;--up:#3ec98f;--dn:#f06a6a;--flat:#e0b84a;--acc:#6bb7d4}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Segoe UI",system-ui,sans-serif}
+main{max-width:1050px;margin:0 auto;padding:18px 14px 40px}a{color:var(--acc)}
+h1{font:600 26px Georgia,serif;margin:6px 0 0}h2{font-size:16px;margin:0 0 8px}
+.sub{color:var(--mute);margin:2px 0 14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat span,label span{display:block;color:var(--mute);font-size:13px}.stat b{font-size:18px}
+.up{color:var(--up)}.dn{color:var(--dn)}.flat{color:var(--flat)}.mute{color:var(--mute)}
+input,select,button{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;width:100%}
+button{width:auto;background:var(--acc);color:var(--bg);border:0;font-weight:600;cursor:pointer}button.alt{background:transparent;color:var(--acc);border:1px solid var(--acc)}
+.wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:620px}
+th,td{padding:8px;text-align:right;border-bottom:1px solid var(--line)}th{color:var(--mute);font-weight:500;font-size:13px}
+th:first-child,td:first-child{text-align:left}small{color:var(--mute)}
+.b{padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;border:1px solid currentColor;white-space:nowrap}
+.note{border-left:3px solid var(--flat);padding:6px 10px;margin:8px 0;background:var(--bg)}
+</style></head><body><main>
+<a href="index.html">← Market dashboard</a>
+<h1>My Portfolio</h1>
+<p class="sub" id="top">Loading…</p>
+<div class="panel"><h2>My monthly plan settings</h2><div class="grid">
+<label><span>Amount to invest each month (LKR)</span><input id="budget" type="number" min="0" step="1000"></label>
+<label><span>Shares to buy each month</span><input id="n" type="number" min="1" max="8"></label>
+<label><span>Max % of portfolio in one company</span><input id="maxW" type="number" min="5" max="100"></label>
+<label><span>Trading cost per buy or sell (%)</span><input id="fee" type="number" min="0" step="0.01"></label>
+<label><span>Include High-risk shares?</span><select id="hi"><option value="0">No (recommended)</option><option value="1">Yes</option></select></label></div>
+<small>Trading cost on the CSE was about 1.12% each way at last check (brokerage, CSE, CDS, SEC and levy). Ask your broker for the current figure.</small></div>
+<div class="panel" id="sum"></div>
+<div class="panel"><h2>This month's suggestion</h2><div id="plan"></div></div>
+<div class="panel"><h2>My holdings</h2><div class="wrap"><table><thead><tr><th>Share</th><th>Qty</th><th>Avg cost</th><th>Price now</th><th>Value</th><th>Profit / loss</th><th>% of portfolio</th><th>Status</th></tr></thead><tbody id="hold"></tbody></table></div></div>
+<div class="panel"><h2>Record a purchase or sale</h2><div class="grid">
+<label><span>Type</span><select id="tt"><option value="buy">Bought</option><option value="sell">Sold</option></select></label>
+<label><span>Share (type the code)</span><input id="ts" list="dl" placeholder="e.g. JKH.N0000"></label>
+<label><span>Date</span><input id="td" type="date"></label>
+<label><span>Quantity</span><input id="tq" type="number" min="1"></label>
+<label><span>Price per share (LKR)</span><input id="tp" type="number" min="0" step="0.01"></label>
+<label><span>Fees paid (LKR, blank = automatic)</span><input id="tf" type="number" min="0" step="0.01"></label></div>
+<datalist id="dl"></datalist><p><button id="add">Save this transaction</button> <small id="msg"></small></p></div>
+<div class="panel"><h2>Transactions</h2><div class="wrap"><table><thead><tr><th>Date</th><th>Type</th><th>Share</th><th>Qty</th><th>Price</th><th>Fees</th><th></th></tr></thead><tbody id="txs"></tbody></table></div></div>
+<div class="panel"><h2>Backup (important)</h2><p>Your holdings are saved <b>only in this browser on this device</b>, never on GitHub, so nobody else can see them. If you clear your browser data or switch phones you lose them, so download a backup after each month.</p>
+<button id="exp">Download backup</button> <label style="display:inline-block"><span>Restore from backup file</span><input id="imp" type="file" accept=".json"></label> <button class="alt" id="clr">Delete everything</button></div>
+<div class="panel"><h2>How long should I hold?</h2><div id="hold-note"></div></div>
+<p><small>This is a decision-support tool, not financial advice. Forecasts have not been shown to predict prices, so the suggestions only filter for safety, liquidity and spread; they do not promise gains. You can lose money. Please speak to a licensed stockbroker or financial adviser about your own situation.</small></p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const fm=v=>Number(v).toLocaleString("en-US",{maximumFractionDigits:2}),f0=v=>Math.round(v).toLocaleString("en-US");
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pc=v=>`<span class="${v>=0?"up":"dn"}">${v>=0?"+":""}${v.toFixed(1)}%</span>`;
+const KEY="cse_portfolio_v1";let R,F={},A={},N=null;
+let P={settings:{budget:100000,n:4,maxW:25,fee:1.12,allowHigh:false},tx:[]};
+try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s&&Array.isArray(s.tx))P={settings:{...P.settings,...s.settings},tx:s.tx}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(P))}catch(e){}};
+const today=()=>new Date().toLocaleDateString("en-CA",{timeZone:"Asia/Colombo"});
+const S=s=>R.shares.find(x=>x.symbol==s);
+const halt=x=>{const an=(A[x.symbol]&&A[x.symbol].ann)||[],h=an.find(a=>/TRADING HALT/i.test(a.announcementCategory||""));return!!(h&&!/LIFTED/i.test(h.announcementCategory))};
+const dayDiff=d=>Math.round((new Date(today())-new Date(d))/864e5);
+
+function positions(){const m={};let fees=0;
+[...P.tx].sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.id-b.id).forEach(t=>{
+const p=m[t.symbol]=m[t.symbol]||{symbol:t.symbol,qty:0,cost:0,first:null,realized:0};
+if(t.type=="buy"){p.cost+=t.qty*t.price+t.fee;p.qty+=t.qty;if(!p.first)p.first=t.date}
+else{const q=Math.min(t.qty,p.qty),avg=p.qty?p.cost/p.qty:0;p.realized+=q*t.price-t.fee-q*avg;p.cost-=q*avg;p.qty-=q;if(!p.qty){p.first=null;p.cost=0}}
+fees+=t.fee});
+return{list:Object.values(m),fees}}
+
+function status(p,x,w){const r=[];let lv="Hold";
+if(!x)return["Review",["share not found in today's data"]];
+const pl=(p.qty*x.last-p.cost)/p.cost*100;
+if(pl<=-20){r.push(`down ${Math.abs(pl).toFixed(0)}% from your cost: re-read the latest report before deciding (do not just buy more)`);lv="Review"}
+if(x.risk=="High"){r.push("risk level is now High");lv="Review"}
+if(halt(x)){r.push("trading halt notice: you may not be able to sell");lv="Review"}
+if(x.trend=="Inactive"){r.push("has not traded recently");lv="Review"}
+if(w>P.settings.maxW+5){r.push(`more than ${P.settings.maxW}% of your portfolio: do not add more`);if(lv=="Hold")lv="Trim?"}
+if(p.first){const d=dayDiff(p.first);r.push(d>=90?`held ${d} days: quarterly check-up due (read the latest report)`:`held ${d} days: next check-up in ${90-d} days`)}
+return[lv,r]}
+
+function plan(pos,total){const st=P.settings,fee=st.fee/100,month=today().slice(0,7);
+const spent=P.tx.filter(t=>t.type=="buy"&&t.date.slice(0,7)==month).reduce((a,t)=>a+t.qty*t.price+t.fee,0);
+const budget=Math.max(0,st.budget-spent),held={},wt={};
+pos.list.filter(p=>p.qty>0).forEach(p=>{const s=S(p.symbol);held[p.symbol]=p.qty*(s?s.last:0);wt[p.symbol]=total?held[p.symbol]/total*100:0});
+const drop={inactive:0,liquid:0,high:0,halt:0,hot:0,size:0},cand=[],after=total+budget,a0=budget/st.n;
+if(budget<=0)return{budget,spent,picks:[],drop,left:0};
+R.shares.forEach(x=>{
+if(x.trend=="Inactive"){drop.inactive++;return}if(x.lowActivity){drop.liquid++;return}
+if(x.risk=="High"&&!st.allowHigh){drop.high++;return}if(halt(x)){drop.halt++;return}
+if(x.rsi>=70||(x.ret20!=null&&x.ret20>=25)){drop.hot++;return}
+const room=st.maxW/100*after-(held[x.symbol]||0),alloc=Math.min(a0,room);
+if(alloc>.05*x.turnover||x.last*(1+fee)>alloc){drop.size++;return}
+const m=F[x.symbol]&&F[x.symbol].manual,why=[];let sc=(x.risk=="Low"?40:x.risk=="Medium"?25:5)-Math.min(15,(x.pDrop10||0)*.5);
+why.push(`${x.risk} risk (typical daily swing ${x.vol}%, past 10%+ falls in ${x.pDrop10}% of months)`);
+sc+=x.turnover>=2e7?20:x.turnover>=5e6?15:x.turnover>=2e6?10:x.turnover>=1e6?6:3;why.push(`trades about LKR ${f0(x.turnover)} a day`);
+sc+=x.rsi<=55?15:x.rsi<=65?10:5;why.push(`RSI ${x.rsi} (not overheated)`);
+if(m){if(m.eps>0){sc+=10;why.push("profit-making (EPS above zero)")}else why.push("no profit per your figures");if(m.dps>0){sc+=5;why.push("pays a dividend")}
+if(m.per&&m.per>=3&&m.per<=25)sc+=5;if(m.pbv&&m.pbv<3)sc+=5}
+else{sc+=8;why.push("⚠ profit and dividend not checked: read the latest report before buying")}
+const b=F[x.symbol]&&F[x.symbol].beta&&F[x.symbol].beta.triASIBetaValue;if(b>1.5)why.push(`swings more than the market (beta ${(+b).toFixed(2)})`);
+if(held[x.symbol]){sc-=wt[x.symbol]>st.maxW*.6?15:5;why.push(`already ${wt[x.symbol].toFixed(0)}% of your portfolio`)}else{sc+=5;why.push("new company: spreads your risk")}
+cand.push({x,sc,why,alloc})});
+cand.sort((a,b)=>b.sc-a.sc);
+const picks=[];let left=budget;
+for(const c of cand){if(picks.length>=st.n)break;const q=Math.floor(c.alloc/(c.x.last*(1+fee)));if(q<1)continue;const cost=q*c.x.last*(1+fee);picks.push({...c,q,cost});left-=cost}
+return{budget,spent,picks,drop,left,count:cand.length}}
+
+function render(){if(!R)return;
+const st=P.settings;["budget","n","maxW","fee"].forEach(k=>{if(document.activeElement!==$(k))$(k).value=st[k]});$("hi").value=st.allowHigh?"1":"0";
+const pos=positions(),live=pos.list.filter(p=>p.qty>0);
+const val=p=>{const s=S(p.symbol);return p.qty*(s?s.last:0)},total=live.reduce((a,p)=>a+val(p),0),cost=live.reduce((a,p)=>a+p.cost,0),real=pos.list.reduce((a,p)=>a+p.realized,0);
+$("sum").innerHTML=`<div class="grid"><div class="stat"><span>Money put in (current holdings)</span><b>LKR ${f0(cost)}</b></div><div class="stat"><span>Worth today</span><b>LKR ${f0(total)}</b></div><div class="stat"><span>Profit / loss on paper</span><b>${cost?pc((total-cost)/cost*100):"–"} <small>LKR ${f0(total-cost)}</small></b></div><div class="stat"><span>Profit / loss already made (sold)</span><b class="${real>=0?"up":"dn"}">LKR ${f0(real)}</b></div><div class="stat"><span>Fees paid so far</span><b>LKR ${f0(pos.fees)}</b></div><div class="stat"><span>Companies held</span><b>${live.length}</b></div></div>
+<small>"Worth today" uses the last close price. Selling also costs about ${st.fee}% in fees.</small>`;
+$("hold").innerHTML=live.map(p=>{const s=S(p.symbol),v=val(p),w=total?v/total*100:0,[lv,rs]=status(p,s,w);
+return`<tr><td><b>${esc(p.symbol)}</b><br><small>${esc(s?s.name:"")}</small></td><td>${f0(p.qty)}</td><td>${fm(p.cost/p.qty)}</td><td>${s?fm(s.last):"–"}</td><td>${f0(v)}</td><td>${pc((v-p.cost)/p.cost*100)}</td><td>${w.toFixed(0)}%</td><td style="text-align:left;min-width:230px"><span class="b ${lv=="Hold"?"up":lv=="Review"?"dn":"flat"}">${lv}</span><br><small>${rs.map(esc).join("<br>")}</small></td></tr>`}).join("")||'<tr><td colspan="8" class="mute">No holdings yet. Record your first purchase below.</td></tr>';
+const pl=plan(pos,total);
+$("plan").innerHTML=pl.budget<=0?`<p>You have already invested your LKR ${f0(st.budget)} for ${today().slice(0,7)} (spent ${f0(pl.spent)}). Come back next month, or raise the amount in the settings.</p>`:
+`<p>Money to invest this month: <b>LKR ${f0(pl.budget)}</b>${pl.spent?` <small>(you already spent ${f0(pl.spent)} this month)</small>`:""}. The bot screened ${R.shares.length} shares and left out: ${pl.drop.liquid} rarely traded, ${pl.drop.high} High risk, ${pl.drop.hot} up too fast lately, ${pl.drop.halt} with trading halts, ${pl.drop.inactive} inactive, ${pl.drop.size} too big a purchase for the share or for your ${st.maxW}% limit.</p>`+
+(pl.picks.length?`<div class="wrap"><table><thead><tr><th>Share</th><th>Price</th><th>Buy qty</th><th>Cost incl. fees</th><th>Why it passed</th><th></th></tr></thead><tbody>${pl.picks.map((c,i)=>`<tr><td><b>${esc(c.x.symbol)}</b><br><small>${esc(c.x.name)}</small></td><td>${fm(c.x.last)}</td><td>${f0(c.q)}</td><td>LKR ${f0(c.cost)}</td><td style="text-align:left;min-width:260px"><small>${c.why.map(esc).join("<br>")}</small></td><td><button class="alt" data-rec="${i}">I bought this</button></td></tr>`).join("")}</tbody></table></div><p>Unspent this month: <b>LKR ${f0(pl.left)}</b> (carry it to next month). Prices move, so check the live price with your broker before buying.</p>
+<div class="note"><b>Before you buy:</b> open each company's latest financial report on the market dashboard. This list only screens for safety, easy trading and spreading your money. It does <b>not</b> know which shares will rise.</div>`:`<p class="mute">No share passes all the safety rules right now with your settings. That is a valid answer: waiting is allowed. You can lower the number of shares, or the monthly amount, in the settings.</p>`);
+window._picks=pl.picks;
+document.querySelectorAll("[data-rec]").forEach(b=>b.onclick=()=>{const c=window._picks[b.dataset.rec];$("tt").value="buy";$("ts").value=c.x.symbol;$("tq").value=c.q;$("tp").value=c.x.last;$("tf").value="";$("tq").scrollIntoView({behavior:"smooth",block:"center"})});
+$("txs").innerHTML=[...P.tx].sort((a,b)=>a.date<b.date?1:-1).map(t=>`<tr><td>${esc(t.date)}</td><td>${t.type=="buy"?"Bought":"Sold"}</td><td>${esc(t.symbol)}</td><td>${f0(t.qty)}</td><td>${fm(t.price)}</td><td>${fm(t.fee)}</td><td><button class="alt" data-del="${t.id}">Delete</button></td></tr>`).join("")||'<tr><td colspan="7" class="mute">No transactions yet.</td></tr>';
+document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{if(confirm("Delete this transaction?")){P.tx=P.tx.filter(t=>t.id!=b.dataset.del);save();render()}});
+$("hold-note").innerHTML=`<p><b>Plan to hold for years, not weeks.</b> Every buy and sell costs about ${st.fee}%, so a round trip costs about <b>${(2*st.fee).toFixed(2)}%</b>: a share must rise that much just for you to break even. Tests on this data showed that short-term price moves cannot be predicted, so trading often mostly adds cost.</p><ul><li><b>Check each holding every 3 months:</b> read the latest report. Is the company still profitable, is debt under control, is the dividend paid?</li><li><b>Reasons to sell or reduce:</b> the business gets worse (losses, heavy debt, a trading halt or scandal), one share grows beyond ${st.maxW}% of your portfolio, or you need the money.</li><li><b>Not good reasons:</b> a price rise or fall of a few percent, or news headlines for one day.</li><li><b>Buying more of a share that has fallen</b> only makes sense if the company is still healthy. Otherwise you are adding to a loss.</li><li>Money you may need within 1 to 2 years does not belong in shares.</li></ul>`}
+
+function readTx(){const t={id:Date.now(),type:$("tt").value,symbol:$("ts").value.trim().toUpperCase(),date:$("td").value||today(),qty:Math.floor(+$("tq").value),price:+$("tp").value};
+const msg=m=>{$("msg").textContent=m;return null};
+if(!S(t.symbol))return msg("Share code not found. Choose one from the list, e.g. JKH.N0000.");
+if(!(t.qty>0)||!(t.price>0))return msg("Enter a quantity and a price above zero.");
+t.fee=$("tf").value!==""?+$("tf").value:+(t.qty*t.price*P.settings.fee/100).toFixed(2);
+if(t.type=="sell"){const p=positions().list.find(p=>p.symbol==t.symbol);if(!p||p.qty<t.qty)return msg("You do not hold that many shares of "+t.symbol+".")}
+return t}
+
+fetch("data/results.json").then(r=>r.json()).then(j=>{R=j;
+$("dl").innerHTML=j.shares.map(s=>`<option value="${esc(s.symbol)}">${esc(s.name)}</option>`).join("");
+$("top").innerHTML=`Today: <b>${new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric",timeZone:"Asia/Colombo"})}</b> · prices as of <b>${esc(j.asOf)}</b> · private to this browser`;
+$("td").value=today();render()}).catch(()=>$("top").textContent="Could not load data/results.json. Open this page from your dashboard site.");
+fetch("data/fundamentals.json").then(r=>r.ok?r.json():null).then(f=>{if(f){F=f.shares;render()}}).catch(()=>{});
+fetch("data/announcements.json").then(r=>r.ok?r.json():null).then(a=>{if(a){A=a.byShare;render()}}).catch(()=>{});
+["budget","n","maxW","fee"].forEach(k=>$(k).oninput=()=>{const v=+$(k).value;if(v>=0){P.settings[k]=v;save();render()}});
+$("hi").onchange=()=>{P.settings.allowHigh=$("hi").value=="1";save();render()};
+$("ts").oninput=()=>{const s=R&&S($("ts").value.trim().toUpperCase());if(s&&!$("tp").value)$("tp").value=s.last};
+$("add").onclick=()=>{const t=readTx();if(!t)return;P.tx.push(t);save();$("msg").textContent="Saved.";["tq","tp","tf","ts"].forEach(k=>$(k).value="");render()};
+$("exp").onclick=()=>{const b=new Blob([JSON.stringify(P,null,1)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="cse-portfolio-backup-"+today()+".json";a.click()};
+$("imp").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const s=JSON.parse(r.result);if(!Array.isArray(s.tx))throw 0;if(confirm("Replace the data in this browser with the backup?")){P={settings:{...P.settings,...s.settings},tx:s.tx};save();render()}}catch(x){alert("That file is not a valid backup.")}};r.readAsText(f)};
+$("clr").onclick=()=>{if(confirm("Delete ALL transactions and settings in this browser? Download a backup first.")){P={settings:{budget:100000,n:4,maxW:25,fee:1.12,allowHigh:false},tx:[]};save();render()}};
+</script></body></html>
