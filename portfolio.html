@@ -28,6 +28,7 @@ th:first-child,td:first-child{text-align:left}small{color:var(--mute)}
 <label><span>Shares to buy each month</span><input id="n" type="number" min="1" max="8"></label>
 <label><span>Max % of portfolio in one company</span><input id="maxW" type="number" min="5" max="100"></label>
 <label><span>Trading cost per buy or sell (%)</span><input id="fee" type="number" min="0" step="0.01"></label>
+<label><span>Minimum fee per trade (LKR, ask your broker)</span><input id="minFee" type="number" min="0" step="1"></label>
 <label><span>Include High-risk shares?</span><select id="hi"><option value="0">No (recommended)</option><option value="1">Yes</option></select></label></div>
 <small>Trading cost on the CSE was about 1.12% each way at last check (brokerage, CSE, CDS, SEC and levy). Ask your broker for the current figure.</small></div>
 <div class="panel" id="sum"></div>
@@ -53,7 +54,7 @@ const fm=v=>Number(v).toLocaleString("en-US",{maximumFractionDigits:2}),f0=v=>Ma
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const pc=v=>`<span class="${v>=0?"up":"dn"}">${v>=0?"+":""}${v.toFixed(1)}%</span>`;
 const KEY="cse_portfolio_v1";let R,F={},A={},N=null;
-let P={settings:{budget:100000,n:4,maxW:25,fee:1.12,allowHigh:false},tx:[]};
+let P={settings:{budget:100000,n:4,maxW:25,fee:1.12,allowHigh:false,minFee:0},tx:[]};
 try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s&&Array.isArray(s.tx))P={settings:{...P.settings,...s.settings},tx:s.tx}}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(P))}catch(e){}};
 const today=()=>new Date().toLocaleDateString("en-CA",{timeZone:"Asia/Colombo"});
@@ -84,14 +85,14 @@ function plan(pos,total){const st=P.settings,fee=st.fee/100,month=today().slice(
 const spent=P.tx.filter(t=>t.type=="buy"&&t.date.slice(0,7)==month).reduce((a,t)=>a+t.qty*t.price+t.fee,0);
 const budget=Math.max(0,st.budget-spent),held={},wt={};
 pos.list.filter(p=>p.qty>0).forEach(p=>{const s=S(p.symbol);held[p.symbol]=p.qty*(s?s.last:0);wt[p.symbol]=total?held[p.symbol]/total*100:0});
-const drop={inactive:0,liquid:0,high:0,halt:0,hot:0,size:0},cand=[],after=total+budget,a0=budget/st.n;
+const mf=st.minFee||0,drop={inactive:0,liquid:0,high:0,halt:0,hot:0,size:0},cand=[],after=total+budget,a0=budget/st.n;
 if(budget<=0)return{budget,spent,picks:[],drop,left:0};
 R.shares.forEach(x=>{
 if(x.trend=="Inactive"){drop.inactive++;return}if(x.lowActivity){drop.liquid++;return}
 if(x.risk=="High"&&!st.allowHigh){drop.high++;return}if(halt(x)){drop.halt++;return}
 if(x.rsi>=70||(x.ret20!=null&&x.ret20>=25)){drop.hot++;return}
 const room=st.maxW/100*after-(held[x.symbol]||0),alloc=Math.min(a0,room);
-if(alloc>.05*x.turnover||x.last*(1+fee)>alloc){drop.size++;return}
+if(alloc>.05*x.turnover||x.last+Math.max(x.last*fee,mf)>alloc){drop.size++;return}
 const m=F[x.symbol]&&F[x.symbol].manual,why=[];let sc=(x.risk=="Low"?40:x.risk=="Medium"?25:5)-Math.min(15,(x.pDrop10||0)*.5);
 why.push(`${x.risk} risk (typical daily swing ${x.vol}%, past 10%+ falls in ${x.pDrop10}% of months)`);
 sc+=x.turnover>=2e7?20:x.turnover>=5e6?15:x.turnover>=2e6?10:x.turnover>=1e6?6:3;why.push(`trades about LKR ${f0(x.turnover)} a day`);
@@ -104,11 +105,11 @@ if(held[x.symbol]){sc-=wt[x.symbol]>st.maxW*.6?15:5;why.push(`already ${wt[x.sym
 cand.push({x,sc,why,alloc})});
 cand.sort((a,b)=>b.sc-a.sc);
 const picks=[];let left=budget;
-for(const c of cand){if(picks.length>=st.n)break;const q=Math.floor(c.alloc/(c.x.last*(1+fee)));if(q<1)continue;const cost=q*c.x.last*(1+fee);picks.push({...c,q,cost});left-=cost}
+for(const c of cand){if(picks.length>=st.n)break;let q=Math.floor(c.alloc/(c.x.last*(1+fee)));const tc=n=>n*c.x.last+Math.max(n*c.x.last*fee,mf);while(q>0&&tc(q)>c.alloc)q--;if(q<1)continue;const cost=tc(q);picks.push({...c,q,cost,feePct:(cost/(q*c.x.last)-1)*100});left-=cost}
 return{budget,spent,picks,drop,left,count:cand.length}}
 
 function render(){if(!R)return;
-const st=P.settings;["budget","n","maxW","fee"].forEach(k=>{if(document.activeElement!==$(k))$(k).value=st[k]});$("hi").value=st.allowHigh?"1":"0";
+const st=P.settings;["budget","n","maxW","fee","minFee"].forEach(k=>{if(document.activeElement!==$(k))$(k).value=st[k]});$("hi").value=st.allowHigh?"1":"0";
 const pos=positions(),live=pos.list.filter(p=>p.qty>0);
 const val=p=>{const s=S(p.symbol);return p.qty*(s?s.last:0)},total=live.reduce((a,p)=>a+val(p),0),cost=live.reduce((a,p)=>a+p.cost,0),real=pos.list.reduce((a,p)=>a+p.realized,0);
 $("sum").innerHTML=`<div class="grid"><div class="stat"><span>Money put in (current holdings)</span><b>LKR ${f0(cost)}</b></div><div class="stat"><span>Worth today</span><b>LKR ${f0(total)}</b></div><div class="stat"><span>Profit / loss on paper</span><b>${cost?pc((total-cost)/cost*100):"–"} <small>LKR ${f0(total-cost)}</small></b></div><div class="stat"><span>Profit / loss already made (sold)</span><b class="${real>=0?"up":"dn"}">LKR ${f0(real)}</b></div><div class="stat"><span>Fees paid so far</span><b>LKR ${f0(pos.fees)}</b></div><div class="stat"><span>Companies held</span><b>${live.length}</b></div></div>
@@ -118,7 +119,7 @@ return`<tr><td><b>${esc(p.symbol)}</b><br><small>${esc(s?s.name:"")}</small></td
 const pl=plan(pos,total);
 $("plan").innerHTML=pl.budget<=0?`<p>You have already invested your LKR ${f0(st.budget)} for ${today().slice(0,7)} (spent ${f0(pl.spent)}). Come back next month, or raise the amount in the settings.</p>`:
 `<p>Money to invest this month: <b>LKR ${f0(pl.budget)}</b>${pl.spent?` <small>(you already spent ${f0(pl.spent)} this month)</small>`:""}. The bot screened ${R.shares.length} shares and left out: ${pl.drop.liquid} rarely traded, ${pl.drop.high} High risk, ${pl.drop.hot} up too fast lately, ${pl.drop.halt} with trading halts, ${pl.drop.inactive} inactive, ${pl.drop.size} too big a purchase for the share or for your ${st.maxW}% limit.</p>`+
-(pl.picks.length?`<div class="wrap"><table><thead><tr><th>Share</th><th>Price</th><th>Buy qty</th><th>Cost incl. fees</th><th>Why it passed</th><th></th></tr></thead><tbody>${pl.picks.map((c,i)=>`<tr><td><b>${esc(c.x.symbol)}</b><br><small>${esc(c.x.name)}</small></td><td>${fm(c.x.last)}</td><td>${f0(c.q)}</td><td>LKR ${f0(c.cost)}</td><td style="text-align:left;min-width:260px"><small>${c.why.map(esc).join("<br>")}</small></td><td><button class="alt" data-rec="${i}">I bought this</button></td></tr>`).join("")}</tbody></table></div><p>Unspent this month: <b>LKR ${f0(pl.left)}</b> (carry it to next month). Prices move, so check the live price with your broker before buying.</p>
+(pl.picks.length?`<div class="wrap"><table><thead><tr><th>Share</th><th>Price</th><th>Buy qty</th><th>Cost incl. fees</th><th>Why it passed</th><th></th></tr></thead><tbody>${pl.picks.map((c,i)=>`<tr><td><b>${esc(c.x.symbol)}</b><br><small>${esc(c.x.name)}</small></td><td>${fm(c.x.last)}</td><td>${f0(c.q)}</td><td>LKR ${f0(c.cost)}<br><small class="${c.feePct>2?"dn":""}">fees ${c.feePct.toFixed(1)}%</small></td><td style="text-align:left;min-width:260px"><small>${c.why.map(esc).join("<br>")}</small></td><td><button class="alt" data-rec="${i}">I bought this</button></td></tr>`).join("")}</tbody></table></div>${pl.picks.some(c=>c.feePct>2)?`<div class="note"><b>Fees are high on small purchases.</b> With your minimum fee, some buys lose more than 2% to fees before the price even moves. Buy fewer shares each month (lower "Shares to buy each month"), or save two months and buy together.</div>`:""}<p>Unspent this month: <b>LKR ${f0(pl.left)}</b> (carry it to next month). Prices move, so check the live price with your broker before buying.</p>
 <div class="note"><b>Before you buy:</b> open each company's latest financial report on the market dashboard. This list only screens for safety, easy trading and spreading your money. It does <b>not</b> know which shares will rise.</div>`:`<p class="mute">No share passes all the safety rules right now with your settings. That is a valid answer: waiting is allowed. You can lower the number of shares, or the monthly amount, in the settings.</p>`);
 window._picks=pl.picks;
 document.querySelectorAll("[data-rec]").forEach(b=>b.onclick=()=>{const c=window._picks[b.dataset.rec];$("tt").value="buy";$("ts").value=c.x.symbol;$("tq").value=c.q;$("tp").value=c.x.last;$("tf").value="";$("tq").scrollIntoView({behavior:"smooth",block:"center"})});
@@ -130,7 +131,7 @@ function readTx(){const t={id:Date.now(),type:$("tt").value,symbol:$("ts").value
 const msg=m=>{$("msg").textContent=m;return null};
 if(!S(t.symbol))return msg("Share code not found. Choose one from the list, e.g. JKH.N0000.");
 if(!(t.qty>0)||!(t.price>0))return msg("Enter a quantity and a price above zero.");
-t.fee=$("tf").value!==""?+$("tf").value:+(t.qty*t.price*P.settings.fee/100).toFixed(2);
+t.fee=$("tf").value!==""?+$("tf").value:+Math.max(t.qty*t.price*P.settings.fee/100,P.settings.minFee||0).toFixed(2);
 if(t.type=="sell"){const p=positions().list.find(p=>p.symbol==t.symbol);if(!p||p.qty<t.qty)return msg("You do not hold that many shares of "+t.symbol+".")}
 return t}
 
@@ -140,11 +141,11 @@ $("top").innerHTML=`Today: <b>${new Date().toLocaleDateString("en-GB",{weekday:"
 $("td").value=today();render()}).catch(()=>$("top").textContent="Could not load data/results.json. Open this page from your dashboard site.");
 fetch("data/fundamentals.json").then(r=>r.ok?r.json():null).then(f=>{if(f){F=f.shares;render()}}).catch(()=>{});
 fetch("data/announcements.json").then(r=>r.ok?r.json():null).then(a=>{if(a){A=a.byShare;render()}}).catch(()=>{});
-["budget","n","maxW","fee"].forEach(k=>$(k).oninput=()=>{const v=+$(k).value;if(v>=0){P.settings[k]=v;save();render()}});
+["budget","n","maxW","fee","minFee"].forEach(k=>$(k).oninput=()=>{const v=+$(k).value;if(v>=0){P.settings[k]=v;save();render()}});
 $("hi").onchange=()=>{P.settings.allowHigh=$("hi").value=="1";save();render()};
 $("ts").oninput=()=>{const s=R&&S($("ts").value.trim().toUpperCase());if(s&&!$("tp").value)$("tp").value=s.last};
 $("add").onclick=()=>{const t=readTx();if(!t)return;P.tx.push(t);save();$("msg").textContent="Saved.";["tq","tp","tf","ts"].forEach(k=>$(k).value="");render()};
 $("exp").onclick=()=>{const b=new Blob([JSON.stringify(P,null,1)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="cse-portfolio-backup-"+today()+".json";a.click()};
 $("imp").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const s=JSON.parse(r.result);if(!Array.isArray(s.tx))throw 0;if(confirm("Replace the data in this browser with the backup?")){P={settings:{...P.settings,...s.settings},tx:s.tx};save();render()}}catch(x){alert("That file is not a valid backup.")}};r.readAsText(f)};
-$("clr").onclick=()=>{if(confirm("Delete ALL transactions and settings in this browser? Download a backup first.")){P={settings:{budget:100000,n:4,maxW:25,fee:1.12,allowHigh:false},tx:[]};save();render()}};
+$("clr").onclick=()=>{if(confirm("Delete ALL transactions and settings in this browser? Download a backup first.")){P={settings:{budget:100000,n:4,maxW:25,fee:1.12,allowHigh:false,minFee:0},tx:[]};save();render()}};
 </script></body></html>
